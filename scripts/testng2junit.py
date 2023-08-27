@@ -51,8 +51,9 @@ import org.junit.runner.RunWith;''', content_new)
                        'org.junit.Assert', content_new)
 
   # this forces @Guice annotation error, but it's needed for Guice.createInjector
-  content_new = re.sub('org.testng.annotations.Guice;',
-                       'com.google.inject.Guice;\nimport com.google.inject.Injector;', content_new)
+  content_new = re.sub('import org.testng.annotations.Guice;',
+                       '''import com.google.inject.Guice;
+import com.google.inject.Injector;''', content_new)
 
 
   # clean up junit4 warnings that junit4 tests should not start with void test*.
@@ -66,9 +67,6 @@ import org.junit.runner.RunWith;''', content_new)
   # Migrate AbstractJerseyTestNG to AbstractJerseyJUnit
   content_new = re.sub('AbstractJerseyTestNG', 'AbstractJerseyJUnit', content_new)
 
-
-  # for remaining imports such as assertEquals
-  #content_new = re.sub('testng', 'junit', content_new)
 
   return content_new
 
@@ -158,6 +156,95 @@ def migrateAsserts(content):
 
   return content_new
 
+"""
+This replaces the following pattern
+
+@Guice(modules = SomeModule.class)
+public class SomeTest {
+
+  @Before
+  public void someTest() {
+  
+  }
+}
+
+..... with .....
+
+public class SomeTest {
+
+  private final Injector injector = Guice.createInjector(new EntityAttributeServiceTestModule());
+
+  @Before
+  public void someTest() {
+    injector.injectMembers(this);  
+  }
+}
+"""
+def migrateGuiceAnnotation(content):
+    if '@Guice' not in content:
+        return content
+
+    injector_line = replace_guice_module_with_injector(content)
+    print('line: ', injector_line)
+
+    # rewrite the content for simplicity instead of regexp
+    new_content = []
+    content_iter = iter(content.split('\n'))
+    for line in content_iter:
+        if '@Guice' in line:
+            if ')' not in line:
+                # skip the next line too since this might span cross two lines
+                next(content_iter)
+            continue
+
+        # handle insertion of injector
+        if 'public class' in line:
+            new_content.append(line)
+            if '{' not in line:
+                new_content.append(next(content_iter))
+
+            #inject injector
+            new_content.append(injector_line)
+            continue
+
+        # handle insertion of injectMember
+        #  @Before
+        #   public void beforeMethod() {
+        #   ....insert here....
+        if '@Before' in line:
+            new_content.append(line)
+            # this should be the line of the method
+            new_content.append(next(content_iter))
+            new_content.append('    injector.injectMembers(this);')
+            continue
+
+        new_content.append(line)
+
+    return '\n'.join(new_content)
+
+
+def replace_guice_module_with_injector(content):
+    if '@Guice' not in content:
+        raise Exception("@Guice is expected")
+
+    modules_regex = re.compile(
+        r'@Guice\(modules\s*=\s*\{?([^}\n]+)\}?\)')
+    module_matches = re.findall(modules_regex, content)
+    print("module_matches: ", module_matches)
+
+    if not module_matches:
+        raise Exception("Cannot extract @Guice modules. Double check the regexp.")
+
+    module_line = module_matches[0].split(',')
+    modules = []
+    for m in module_line:
+        new_module = re.sub(r'^', 'new ', m.strip())
+        new_module = re.sub('\.class', '()', new_module)
+        modules.append(new_module)
+
+    return '\n  private final Injector injector = Guice.createInjector({});'\
+        .format(", ".join(["{}"] * len(modules)).format(*modules))
+
 
 def migrateBuck(buck_module):
     buck_file = buck_module + "/BUCK"
@@ -186,6 +273,7 @@ def migrateTestFiles(test_dir):
             content_new = migrateImports(content)
             content_new = migrateAnnotations(content_new)
             content_new = migrateDataProviders(content_new)
+            content_new = migrateGuiceAnnotation(content_new)
             content_new = migrateExceptions(content_new)
             content_new = migrateAsserts(content_new)
             with open(file_name, 'w') as fn:

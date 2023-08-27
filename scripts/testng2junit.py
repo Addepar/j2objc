@@ -21,10 +21,10 @@ Usage:
 
 import os
 import sys
-import regex as re
+import re
 
 
-def MigrateImports(content):
+def migrateImports(content):
   """Updates import statements from TestNG to JUnit."""
   content_new = re.sub('org.testng.annotations.Test', 'org.junit.Test', content)
 
@@ -73,7 +73,7 @@ import org.junit.runner.RunWith;''', content_new)
   return content_new
 
 
-def MigrateAnnotations(content):
+def migrateAnnotations(content):
   content_new = re.sub('@Test\npublic class', 'public class', content)
 
   content_new = re.sub('@BeforeMethod', '@Before', content_new)
@@ -81,7 +81,7 @@ def MigrateAnnotations(content):
   return content_new
 
 
-def MigrateDataProviders(content):
+def migrateDataProviders(content):
   """TestNG allows a DataProvider to be renamed."""
   # Make a list of tuples mapping the
   # new name to original name.
@@ -119,7 +119,7 @@ def MigrateDataProviders(content):
   return content_new
 
 
-def MigrateExceptions(content):
+def migrateExceptions(content):
   content_new = re.sub('expectedExceptions', 'expected', content)
 
   exception_patt = re.compile(r'expected\s?=\s?{(.*)}')
@@ -128,7 +128,7 @@ def MigrateExceptions(content):
   return content_new
 
 
-def MigrateAsserts(content):
+def migrateAsserts(content):
   """Converts TestNG assertions to JUnit."""
   # TestNG has an overload for assertEquals that takes parameters:
   # obj1, obj2, message. JUnit also has this overload but takes parameters:
@@ -158,7 +158,8 @@ def MigrateAsserts(content):
 
   return content_new
 
-def MigrateBuck(buck_module):
+
+def migrateBuck(buck_module):
     buck_file = buck_module + "/BUCK"
     if os.path.isfile(buck_file):
         with open(buck_file, 'r') as f_in:
@@ -171,7 +172,7 @@ def MigrateBuck(buck_module):
                     fn.write(content)
 
 
-def MigrateTestFiles(test_dir):
+def migrateTestFiles(test_dir):
     test_files = []
     for path, dir, files in os.walk(test_dir):
         for file in files:
@@ -182,11 +183,11 @@ def MigrateTestFiles(test_dir):
         with open(file_name, 'r') as f:
             print("Converting ", file_name)
             content = f.read()
-            content_new = MigrateImports(content)
-            content_new = MigrateAnnotations(content_new)
-            content_new = MigrateDataProviders(content_new)
-            content_new = MigrateExceptions(content_new)
-            content_new = MigrateAsserts(content_new)
+            content_new = migrateImports(content)
+            content_new = migrateAnnotations(content_new)
+            content_new = migrateDataProviders(content_new)
+            content_new = migrateExceptions(content_new)
+            content_new = migrateAsserts(content_new)
             with open(file_name, 'w') as fn:
                 fn.write(content_new)
 
@@ -200,9 +201,9 @@ def main():
   test_dir = buck_module
   if 'src/test' not in buck_module:
       test_dir = buck_module + '/src/test'
-      MigrateBuck(buck_module)
+      migrateBuck(buck_module)
 
-  MigrateTestFiles(test_dir)
+  migrateTestFiles(test_dir)
 
 if __name__ == '__main__':
   sys.exit(main())

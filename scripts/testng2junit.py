@@ -246,7 +246,7 @@ def replace_guice_module_with_injector(content):
         .format(", ".join(["{}"] * len(modules)).format(*modules))
 
 
-def migrateBuck(buck_module):
+def migrate_buck(buck_module):
     buck_file = buck_module + "/BUCK"
     if os.path.isfile(buck_file):
         with open(buck_file, 'r') as f_in:
@@ -259,7 +259,7 @@ def migrateBuck(buck_module):
                     fn.write(content)
 
 
-def migrateTestFiles(test_dir):
+def migrate_tests(test_dir):
     test_files = []
     for path, dir, files in os.walk(test_dir):
         for file in files:
@@ -289,9 +289,9 @@ def main():
   test_dir = buck_module
   if 'src/test' not in buck_module:
       test_dir = buck_module + '/src/test'
-      migrateBuck(buck_module)
+      migrate_buck(buck_module)
 
-  migrateTestFiles(test_dir)
+  migrate_tests(test_dir)
 
 if __name__ == '__main__':
   sys.exit(main())

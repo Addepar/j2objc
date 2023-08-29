@@ -172,7 +172,7 @@ public class SomeTest {
 
 public class SomeTest {
 
-  private final Injector injector = Guice.createInjector(new EntityAttributeServiceTestModule());
+  private final Injector injector = Guice.createInjector(new SomeModule());
 
   @Before
   public void someTest() {
@@ -191,20 +191,19 @@ def migrate_guice_annotation(content):
     new_content = []
     content_iter = iter(content.split('\n'))
     for line in content_iter:
+        # remove all the lines starting with @Guice(....)
         if '@Guice' in line:
-            if ')' not in line:
-                # skip the next line too since this might span cross two lines
+            while ')' not in line:
+                # skip the next line too since this might span across multiple lines
                 next(content_iter)
             continue
 
         # handle insertion of injector
         if 'public class' in line:
             new_content.append(line)
-            if '{' not in line:
-                new_content.append(next(content_iter))
 
-            #inject injector
-            new_content.append(injector_line)
+            #inject injector after public class SomeClass {
+            insert_line_after_method(new_content, content_iter, injector_line)
             continue
 
         # handle insertion of injectMember
@@ -213,9 +212,9 @@ def migrate_guice_annotation(content):
         #   ....insert here....
         if '@Before' in line:
             new_content.append(line)
-            # this should be the line of the method
-            new_content.append(next(content_iter))
-            new_content.append('    injector.injectMembers(this);')
+            # this should be the line of the method and keep adding the line until we get {
+            # insert injectMember as the first line below the below method.
+            insert_line_after_method(new_content, content_iter, '    injector.injectMembers(this);')
             continue
 
         new_content.append(line)
@@ -244,6 +243,16 @@ def replace_guice_module_with_injector(content):
 
     return '\n  private final Injector injector = Guice.createInjector({});'\
         .format(", ".join(["{}"] * len(modules)).format(*modules))
+
+
+def insert_line_after_method(contents, content_iter, new_line):
+    method_line = next(content_iter)
+    while '{' not in method_line:
+        contents.append(method_line)
+        method_line = next(content_iter)
+
+    contents.append(method_line)
+    contents.append(new_line)
 
 
 def migrate_buck(buck_module):

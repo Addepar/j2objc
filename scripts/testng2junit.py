@@ -76,6 +76,18 @@ def migrate_testng_annotations(content):
 
   content_new = re.sub('@BeforeMethod', '@Before', content_new)
 
+  if '@BeforeClass' in content_new:
+      content_iter = iter(content_new.split('\n'))
+      content_list = []
+      for line in content_iter:
+          content_list.append(line)
+          if '@BeforeClass' in line:
+              line = next(content_iter)
+              line = re.sub('public void', 'public static void', line)
+              content_list.append(line)
+
+      return '\n'.join(content_list)
+
   return content_new
 
 

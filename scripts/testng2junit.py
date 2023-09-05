@@ -76,14 +76,18 @@ def migrate_testng_annotations(content):
 
   content_new = re.sub('@BeforeMethod', '@Before', content_new)
 
-  if '@BeforeClass' in content_new:
+  content_new = re.sub('@BeforeClass', '@Before', content_new)
+
+  content_new = re.sub('@AfterMethod', '@After', content_new)
+
+  if '@After' in content_new:
       content_iter = iter(content_new.split('\n'))
       content_list = []
       for line in content_iter:
           content_list.append(line)
-          if '@BeforeClass' in line:
+          if '@After' in line:
               line = next(content_iter)
-              line = re.sub('public void', 'public static void', line)
+              line = re.sub('private void', 'public void', line)
               content_list.append(line)
 
       return '\n'.join(content_list)
@@ -297,11 +301,6 @@ def migrate_inject_constructor(class_name, content):
 
         return '\n'.join(content_new)
     return content
-
-input_text = """
-  private final AccountStatusAuditService service;
-  private final DSLContext db;
-"""
 
 def extract_constructor_arguments(class_name, content):
     content_iter = iter(content.split('\n'))

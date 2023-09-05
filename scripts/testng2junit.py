@@ -63,6 +63,7 @@ import com.google.inject.Injector;''', content_new)
   # migrate NullChecking*TestBase
   content_new = re.sub('NullCheckingEnumTestBase', 'NullCheckingEnumJunitTestBase', content_new)
   content_new = re.sub('NullCheckingInstanceTestBase', 'NullCheckingInstanceJunitTestBase', content_new)
+  content_new = re.sub('NullCheckingBuilderTestBase', 'NullCheckingBuilderJunitTestBase', content_new)
 
   # Migrate AbstractJerseyTestNG to AbstractJerseyJUnit
   content_new = re.sub('AbstractJerseyTestNG', 'AbstractJerseyJUnit', content_new)

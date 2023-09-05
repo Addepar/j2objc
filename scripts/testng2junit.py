@@ -268,7 +268,6 @@ def migrate_inject_constructor(class_name, content):
 
     # extract constructor arguments
     injected_arguments = extract_constructor_arguments(class_name, content)
-    print('injected arguments: ', injected_arguments)
 
     if injected_arguments:
         content_iter = iter(content.split('\n'))
@@ -322,6 +321,7 @@ def extract_constructor_arguments(class_name, content):
     match = re.search('\((.*?)\)', ''.join(lines))
     if match:
         arguments = [a.strip() for a in match.group(1).strip().split(',')]
+        print('injected arguments: ', arguments)
 
     return arguments
 

@@ -23,6 +23,20 @@ import os
 import sys
 import re
 
+throw_template = '''\tassertThrows(
+        () -> {
+%s
+        },
+        %s,
+        "%s"
+    );'''
+
+before_inject_template = '''  @Before
+  public void setup() {
+    injector.injectMembers(this);     
+  }
+'''
+
 
 def migrate_imports(content):
   """Updates import statements from TestNG to JUnit."""
@@ -73,10 +87,19 @@ import org.junit.runner.RunWith;''', content_new)
 import com.google.inject.Injector;''', content_new)
 
   # include @Ignore
+  imports = ['org.junit.Test;']
   if '@Test(enabled' in content_new:
-      content_new = re.sub('org.junit.Test;',
-                           '''org.junit.Test;
-import org.junit.Ignore;''', content_new)
+      imports.append('import org.junit.Ignore;')
+
+  if 'expectedExceptionsMessageRegExp' in content_new:
+    imports.append('import static com.addepar.infra.library.lang.assertion.AssertionUtils.assertThrows;')
+
+  # if we have @Guice, we also need @Before imports to support before_inject_template.
+  # refer to migrate_guice_annotation
+  if '@Guice' in content_new and '@Before' not in content_new:
+    imports.append('import org.junit.Before;')
+
+  content_new = re.sub('org.junit.Test;', '\n'.join(imports), content_new)
 
   return content_new
 
@@ -160,13 +183,69 @@ def migrate_data_providers(content):
   return content_new
 
 
+"""
+Replace 
+@Test(expectedExceptions = IllegalArgumentException.class) 
+
+with 
+@Test(expected = IllegalArgumentException.class) 
+
+OR 
+@Test(expected = IllegalArgumentException.class,
+    expectedExceptionsMessageRegExp = "some message")
+
+with 
+assertThrows(
+        () -> {
+          Config config = ConfigFactory.load().getConfig("test8." + BatuNotificationFilterTest.class.getPackageName());
+          new BatuNotificationFilter(config);
+        },
+        IllegalArgumentException.class,
+        "notification_filter.mode must be either 'include' or 'exclude'"
+);    
+"""
 def migrate_exceptions(content):
-  content_new = re.sub('expectedExceptions', 'expected', content)
 
-  exception_patt = re.compile(r'expected\s?=\s?{(.*)}')
-  content_new = exception_patt.sub('expected=\\1', content_new)
+  if 'expectedExceptionsMessageRegExp' not in content:
+    return re.sub('expectedExceptions', 'expected', content)
 
-  return content_new
+  pattern = r'@Test\(expectedExceptions\s*=\s*([^\)]+)\s*,\s*\n*expectedExceptionsMessageRegExp\s*=\s*"([^"]+)"\)'
+  new_content = []
+  content_iter = iter(content.split('\n'))
+  for line in content_iter:
+    at_test_annotation_line = ''
+    method_body = []
+    if '@Test' in line and 'expected' in line:
+        at_test_annotation_line = line
+        while ')' not in line:
+            line = next(content_iter)
+            at_test_annotation_line += line
+
+        new_content.append('  @Test')
+        # method line
+        while '{' not in line:
+            line = next(content_iter)
+            new_content.append(line)
+
+        if '{' in line:
+            # parse out method lines
+            line = next(content_iter)
+            while '  }' != line:
+                method_body.append('\t\t'+line)
+                line = next(content_iter)
+
+        matches = re.search(pattern, at_test_annotation_line)
+        if matches:
+          expected_exceptions = matches.group(1).strip()
+          message_regex = matches.group(2).strip()
+          # add the method boby replacement
+          print('method body\n', throw_template % ('\n'.join(method_body), expected_exceptions, message_regex))
+          new_content.append(throw_template % ('\n'.join(method_body), expected_exceptions, message_regex))
+
+
+    new_content.append(line)
+
+  return '\n'.join(new_content)
 
 
 def migrate_asserts(content):
@@ -265,6 +344,19 @@ def migrate_guice_annotation(content):
             continue
 
         new_content.append(line)
+
+    #check if there is any @Before in this test, if not add one.
+    if '@Before' not in new_content:
+        # insert it before the first @Test
+        insert_idx = 0
+        for idx, line in enumerate(new_content):
+            if '@Test' in line:
+                insert_idx = idx
+                break
+
+        if insert_idx:
+            new_content.insert(insert_idx, before_inject_template)
+
 
     return '\n'.join(new_content)
 

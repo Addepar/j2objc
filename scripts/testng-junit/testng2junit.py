@@ -350,7 +350,7 @@ def migrate_guice_annotation(content):
         # insert it before the first @Test
         insert_idx = 0
         for idx, line in enumerate(new_content):
-            if '@Test' in line:
+            if '@After' in line or '@BeforeClass' in line or '@Test' in line:
                 insert_idx = idx
                 break
 

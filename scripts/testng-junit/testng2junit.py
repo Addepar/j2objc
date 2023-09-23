@@ -235,7 +235,6 @@ def migrate_exceptions(content):
                 method_body.append('\t\t'+line)
                 line = next(content_iter)
 
-        print('test line: ', at_test_annotation_line)
         matches = re.search(pattern, at_test_annotation_line)
         print('matches:', matches)
         if matches:
@@ -243,7 +242,7 @@ def migrate_exceptions(content):
           message_regex = matches.group(2).strip()
           # add the method boby replacement
           method_body_value = throw_template % ('\n'.join(method_body), expected_exceptions, message_regex)
-          print('method body:\n', method_body_value)
+#          print('method body:\n', method_body_value)
           new_content.append(method_body_value)
 
 

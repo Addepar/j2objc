@@ -29,6 +29,9 @@ def migrate_imports(content):
   content_new = re.sub('org.testng.annotations.Test', 'org.junit.Test', content)
 
   #Before
+  content_new = re.sub('org.testng.annotations.BeforeSuite',
+                       'org.junit.Before', content_new)
+
   content_new = re.sub('org.testng.annotations.BeforeMethod',
                        'org.junit.Before', content_new)
 
@@ -58,6 +61,9 @@ import org.junit.runner.RunWith;''', content_new)
   content_new = re.sub('org.testng.AssertJUnit',
                        'org.junit.Assert', content_new)
 
+  content_new = re.sub('org.testng.Assert.assertThrows',
+                       'com.addepar.infra.library.lang.assertion.AssertionUtils.assertThrows', content_new)
+
   content_new = re.sub('org.testng.Assert',
                        'org.junit.Assert', content_new)
 
@@ -82,6 +88,7 @@ def migrate_testng_annotations(content):
 
   # Use @Before/@After over @BeforeClass/@AfterClass since the latter requires the method to be static.
   # Most of our methods are more member friendly.
+  content_new = re.sub('@BeforeSuite', '@Before', content_new)
   content_new = re.sub('@BeforeMethod', '@Before', content_new)
   content_new = re.sub('@BeforeClass', '@Before', content_new)
   content_new = re.sub('@BeforeTest', '@Before', content_new)
@@ -103,6 +110,8 @@ def migrate_testng_annotations(content):
   content_new = re.sub('@Test\n  void', '@Test\n  public void', content_new)
   content_new = re.sub('@Test\n  private', '@Test\n  public', content_new)
   content_new = re.sub('@After\n  private', '@After\n  public', content_new)
+  content_new = re.sub('@Before\n  public static', '@Before\n  public', content_new)
+  content_new = re.sub('@Before\n  private static', '@Before\n  public', content_new)
   content_new = re.sub('@Before\n  private', '@Before\n  public', content_new)
   content_new = re.sub(r'@Test\(enabled = false\)', '@Ignore @Test', content_new)
 
@@ -137,6 +146,9 @@ def migrate_data_providers(content):
 
   if 'DataProvider' in content_new and '@RunWith(DataProviderRunner.class)' not in content_new:
     content_new = re.sub('public class',
+                         '@RunWith(DataProviderRunner.class)\npublic class',
+                         content_new)
+    content_new = re.sub('public final class',
                          '@RunWith(DataProviderRunner.class)\npublic class',
                          content_new)
 
@@ -230,7 +242,7 @@ def migrate_guice_annotation(content):
             continue
 
         # handle insertion of injector
-        if 'public class' in line:
+        if 'public class' in line or 'public final class' in line:
             new_content.append(line)
 
             if '{' in line:

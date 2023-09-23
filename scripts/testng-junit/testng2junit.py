@@ -31,6 +31,7 @@ throw_template = '''\tassertThrows(
         "%s"
     );'''
 
+
 before_inject_template = '''  @Before
   public void setup() {
     injector.injectMembers(this);     
@@ -239,7 +240,6 @@ def migrate_exceptions(content):
           expected_exceptions = matches.group(1).strip()
           message_regex = matches.group(2).strip()
           # add the method boby replacement
-          print('method body\n', throw_template % ('\n'.join(method_body), expected_exceptions, message_regex))
           new_content.append(throw_template % ('\n'.join(method_body), expected_exceptions, message_regex))
 
 
@@ -312,6 +312,7 @@ def migrate_guice_annotation(content):
     # rewrite the content for simplicity instead of regexp
     new_content = []
     content_iter = iter(content.split('\n'))
+    add_injected_member = False
     for line in content_iter:
         # remove all the lines starting with @Guice(....)
         if '@Guice' in line:
@@ -341,12 +342,13 @@ def migrate_guice_annotation(content):
             # this should be the line of the method and keep adding the line until we get {
             # insert injectMember as the first line below the below method.
             insert_line_after_method(new_content, content_iter, '    injector.injectMembers(this);')
+            add_injected_member = True
             continue
 
         new_content.append(line)
 
     #check if there is any @Before in this test, if not add one.
-    if '@Before' not in new_content:
+    if not add_injected_member:
         # insert it before the first @Test
         insert_idx = 0
         for idx, line in enumerate(new_content):
@@ -396,8 +398,13 @@ def migrate_inject_constructor(class_name, content):
         for line in content_iter:
             if parsing:
                 for argument in injected_arguments:
-                    if argument + ';' in line:
-                        content_new.append('  @Inject')
+                    #check if the argument has annotation, for example - @InProcessMode ChannelFactory channelFactory
+                    additional_annotation = ''
+                    if '@' in argument:
+                        additional_annotation, argument = argument.split(' ', 1)
+
+                    if argument and argument + ';' in line:
+                        content_new.append('  @Inject ' + additional_annotation)
                         line = re.sub('final ', '', line)
 
                 # remove constructor
@@ -435,7 +442,7 @@ def extract_constructor_arguments(class_name, content):
     arguments = []
     match = re.search('\((.*?)\)', ''.join(lines))
     if match:
-        arguments = [a.strip() for a in match.group(1).strip().split(',')]
+        arguments = [a.strip() for a in match.group(1).strip().split(',') if a.strip()]
         print('injected arguments: ', arguments)
 
     return arguments

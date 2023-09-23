@@ -497,7 +497,7 @@ def migrate_tests(test_dir):
     test_files = []
     for path, dir, files in os.walk(test_dir):
         for file in files:
-            if file.endswith('.java'):
+            if file.endswith('.java') and not file.endswith('AbstractJerseyTestNG.java'):
                 test_files.append(os.path.join(path, file))
 
     for file_name in test_files:

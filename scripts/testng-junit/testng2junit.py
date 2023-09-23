@@ -28,7 +28,7 @@ throw_template = '''\tassertThrows(
 %s
         },
         %s,
-        "%s"
+        %s
     );'''
 
 
@@ -210,7 +210,7 @@ def migrate_exceptions(content):
   if 'expectedExceptionsMessageRegExp' not in content:
     return re.sub('expectedExceptions', 'expected', content)
 
-  pattern = r'@Test\(expectedExceptions\s*=\s*([^\)]+)\s*,\s*\n*expectedExceptionsMessageRegExp\s*=\s*"([^"]+)"\)'
+  pattern = r'@Test\(expectedExceptions\s*=\s*([^\)]+)\s*,\s*\n*expectedExceptionsMessageRegExp\s*=\s*(.*?)\s*\)'
   new_content = []
   content_iter = iter(content.split('\n'))
   for line in content_iter:
@@ -235,12 +235,16 @@ def migrate_exceptions(content):
                 method_body.append('\t\t'+line)
                 line = next(content_iter)
 
+        print('test line: ', at_test_annotation_line)
         matches = re.search(pattern, at_test_annotation_line)
+        print('matches:', matches)
         if matches:
           expected_exceptions = matches.group(1).strip()
           message_regex = matches.group(2).strip()
           # add the method boby replacement
-          new_content.append(throw_template % ('\n'.join(method_body), expected_exceptions, message_regex))
+          method_body_value = throw_template % ('\n'.join(method_body), expected_exceptions, message_regex)
+          print('method body:\n', method_body_value)
+          new_content.append(method_body_value)
 
 
     new_content.append(line)
@@ -271,10 +275,10 @@ def migrate_asserts(content):
   # TestNG has overloads for assert(True|False|NotNull|Same) taking two
   # parameters: condition, message. JUnit also has these overloads but takes
   # parameters: message, condition.
-  # assert_conditional_regex = re.compile(
-  #     r'assert(True|False|NotNull|Same)\((.*), (.*)\);')
-  # content_new = assert_conditional_regex.sub('assert\\1(\\3, \\2);',
-  #                                            content_new)
+  assert_conditional_regex = re.compile(
+      r'assert(True|False|NotNull|Same)\((.*), (.*)\);')
+  content_new = assert_conditional_regex.sub('assert\\1(\\3, \\2);',
+                                             content_new)
 
   return content_new
 

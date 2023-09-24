@@ -159,9 +159,10 @@ def migrate_data_providers(content):
   if '@DataProvider' not in content:
       return content
 
+  content_new = re.sub(r'private Object\[\]\[\]', 'public Object[][]', content)
   data_provider_regex = re.compile(
       r'@DataProvider\(name\s*=\s*(.*)\)\s*public\s+Object\[\]\[\]\s+(\w+)\(\)')
-  data_provider_rename_tuples = re.findall(data_provider_regex, content)
+  data_provider_rename_tuples = re.findall(data_provider_regex, content_new)
 
   # Remove the renamed data provider from test annotation and put it in.
   # @UseDataProvider annotation
@@ -224,7 +225,7 @@ def migrate_exceptions(content):
   if 'expectedExceptionsMessageRegExp' not in content:
       return content_new
 
-  pattern = r'@Test\(expected\s*=\s*([^\)]+)\s*,\s*\n*expectedExceptionsMessageRegExp\s*=\s*(.*?)\s*\)'
+  pattern = r'@Test\(expected\s*=\s*([^\)]+)\s*,\s*\n*expectedMessageRegExp\s*=\s*(.*?)\s*\)'
   new_content = []
   content_iter = iter(content_new.split('\n'))
   for line in content_iter:
@@ -252,13 +253,13 @@ def migrate_exceptions(content):
                 line = next(content_iter)
 
         matches = re.search(pattern, at_test_annotation_line)
+        print('expected exception + message matches:', matches)
         if matches:
           expected_exceptions = matches.group(1).strip()
           message_regex = matches.group(2).strip()
           # add the method boby replacement
           method_template = throw_with_callable_template if 'throws' in method_signature else throw_template
           method_body_value = method_template % ('\n'.join(method_body), expected_exceptions, message_regex)
-#          print('method body:\n', method_body_value)
           new_content.append(method_body_value)
 
 

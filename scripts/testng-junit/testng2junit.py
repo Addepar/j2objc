@@ -32,6 +32,16 @@ throw_template = '''\tassertThrows(
     );'''
 
 
+throw_with_callable_template = '''\tassertCallableThrows(
+        () -> {
+%s
+          return null;
+        },
+        %s,
+        %s
+    );'''
+
+
 before_inject_template = '''  @Before
   public void setup() {
     injector.injectMembers(this);     
@@ -94,6 +104,7 @@ import com.google.inject.Injector;''', content_new)
 
   if 'expectedExceptionsMessageRegExp' in content_new:
     imports.append('import static com.addepar.infra.library.lang.assertion.AssertionUtils.assertThrows;')
+    imports.append('import static com.addepar.infra.library.lang.assertion.AssertionUtils.assertCallableThrows;')
 
   # if we have @Guice, we also need @Before imports to support before_inject_template.
   # refer to migrate_guice_annotation
@@ -148,23 +159,27 @@ def migrate_data_providers(content):
   # new name to original name.
   # @DataProvider(name="MillisInstantNoNanos")
   # Object[][] provider_factory_millis_long() {
+  if '@DataProvider' not in content:
+      return content
+
   data_provider_regex = re.compile(
-      r'@DataProvider\(name\s?=\s?(".*")\)\s*.*\[\]\[\] (.*)\(\)')
+      r'@DataProvider\(name\s*=\s*(\w+)\)\s+public\s+Object\[\]\[\]\s+(\w+)\(\)')
   data_provider_rename_tuples = re.findall(data_provider_regex, content)
+
+  if not data_provider_rename_tuples:
+      data_provider_rename_tuples = re.findall(r'@DataProvider\(name\s*=\s*(\w+)\)\s+public\s+Iterator<\s*Object\[\]>\s+(\w+)\(\)', content)
 
   # Remove the renamed data provider from test annotation and put it in.
   # @UseDataProvider annotation
   # @Test(dataProvider="MillisInstantNoNanos")
-  data_provider_test_regex = re.compile(
-      r'@Test\(dataProvider\s*=\s*(".*"),?\s?(.*)?\)')
-  content_new = data_provider_test_regex.sub(
-      '@Test(\\2)\n  @UseDataProvider(\\1)', content)
+  data_provider_test_regex = re.compile(r'@Test\(dataProvider\s*=\s*(.*)\s*,\s*(.*)\)')
+  content_new = data_provider_test_regex.sub('@Test(\\2)\n  @UseDataProvider(\\1)', content)
 
   # clean up @Test() to @Test
   content_new = re.sub('@Test\(\)', '@Test', content_new)
 
   for tup in data_provider_rename_tuples:
-    content_new = re.sub(tup[0], '"' + tup[1] + '"', content_new)
+   content_new = re.sub(r"@UseDataProvider\({}\)".format(tup[0]), "@UseDataProvider(\"{}\")".format(tup[1]), content_new)
 
   content_new = re.sub('@DataProvider.*', '@DataProvider', content_new)
 
@@ -173,13 +188,12 @@ def migrate_data_providers(content):
                          '@RunWith(DataProviderRunner.class)\npublic class',
                          content_new)
     content_new = re.sub('public final class',
-                         '@RunWith(DataProviderRunner.class)\npublic class',
+                         '@RunWith(DataProviderRunner.class)\npublic final class',
                          content_new)
 
   # In JUnit data providers have to be public and static.
-  object_array_provider_regex = re.compile(r'(public|private) Object\[\]\[\] (.*)\(\)')
-  content_new = object_array_provider_regex.sub(
-      'public static Object[][] \\2()', content_new)
+  content_new = re.sub(r'(public|private) Object\[\]\[\] (.*)\(\)', 'public static Object[][] \\2()', content_new)
+  content_new = re.sub(r'(public|private) Iterator<Object\[\]> (.*)\(\)', 'public static Iterator<Object[]> \\2()', content_new)
 
   return content_new
 
@@ -216,6 +230,7 @@ def migrate_exceptions(content):
   for line in content_iter:
     at_test_annotation_line = ''
     method_body = []
+    method_signature = ''
     if '@Test' in line and 'expected' in line:
         at_test_annotation_line = line
         while ')' not in line:
@@ -227,6 +242,7 @@ def migrate_exceptions(content):
         while '{' not in line:
             line = next(content_iter)
             new_content.append(line)
+            method_signature += line
 
         if '{' in line:
             # parse out method lines
@@ -236,12 +252,12 @@ def migrate_exceptions(content):
                 line = next(content_iter)
 
         matches = re.search(pattern, at_test_annotation_line)
-        print('matches:', matches)
         if matches:
           expected_exceptions = matches.group(1).strip()
           message_regex = matches.group(2).strip()
           # add the method boby replacement
-          method_body_value = throw_template % ('\n'.join(method_body), expected_exceptions, message_regex)
+          method_template = throw_with_callable_template if 'throws' in method_signature else throw_template
+          method_body_value = method_template % ('\n'.join(method_body), expected_exceptions, message_regex)
 #          print('method body:\n', method_body_value)
           new_content.append(method_body_value)
 

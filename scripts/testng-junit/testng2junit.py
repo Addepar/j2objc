@@ -496,6 +496,11 @@ def migrate_buck(buck_module):
                 print('Converting ', buck_file)
                 content = re.sub(r'java_test_internal\(',
                                  'java_test_internal(\n\ttest_type = "junit",', content)
+
+            if 'TEST_DEPS' in content and '//infra/library/lang:test_utils' not in content:
+                content = re.sub(r'TEST_DEPS = \[',
+                                 'TEST_DEPS = [\n\t"//infra/library/lang:test_utils",', content)
+
                 with open(buck_file, 'w') as fn:
                     fn.write(content)
 

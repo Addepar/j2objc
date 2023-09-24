@@ -89,9 +89,6 @@ import org.junit.runner.RunWith;''', content_new)
   content_new = re.sub('org.testng.Assert.assertThrows',
                        'com.addepar.infra.library.lang.assertion.AssertionUtils.assertThrows', content_new)
 
-  content_new = re.sub('org.testng.Assert',
-                       'org.junit.Assert', content_new)
-
   # this forces @Guice annotation error, but it's needed for Guice.createInjector
   content_new = re.sub('import org.testng.annotations.Guice;',
                        '''import com.google.inject.Guice;
@@ -104,7 +101,7 @@ import com.google.inject.Injector;''', content_new)
 
   if 'expectedExceptionsMessageRegExp' in content_new:
     imports.append('import static com.addepar.infra.library.lang.assertion.AssertionUtils.assertThrows;')
-    imports.append('import static com.addepar.infra.library.lang.assertion.AssertionUtils.assertCallableThrows;')
+    imports.append('import static com.addepar.infra.library.lang.assertion.Assert.assertCallableThrows;')
 
   # if we have @Guice, we also need @Before imports to support before_inject_template.
   # refer to migrate_guice_annotation
@@ -163,21 +160,20 @@ def migrate_data_providers(content):
       return content
 
   data_provider_regex = re.compile(
-      r'@DataProvider\(name\s*=\s*(\w+)\)\s+public\s+Object\[\]\[\]\s+(\w+)\(\)')
+      r'@DataProvider\(name\s*=\s*(.*)\)\s*public\s+Object\[\]\[\]\s+(\w+)\(\)')
   data_provider_rename_tuples = re.findall(data_provider_regex, content)
-
-  if not data_provider_rename_tuples:
-      data_provider_rename_tuples = re.findall(r'@DataProvider\(name\s*=\s*(\w+)\)\s+public\s+Iterator<\s*Object\[\]>\s+(\w+)\(\)', content)
 
   # Remove the renamed data provider from test annotation and put it in.
   # @UseDataProvider annotation
   # @Test(dataProvider="MillisInstantNoNanos")
-  data_provider_test_regex = re.compile(r'@Test\(dataProvider\s*=\s*(.*)\s*,\s*(.*)\)')
-  content_new = data_provider_test_regex.sub('@Test(\\2)\n  @UseDataProvider(\\1)', content)
+
+  #  r'@Test\(dataProvider\s*=\s*(.*)\s*,\s*(.*)\)'
+  content_new = re.sub(r'@Test\(dataProvider\s*=\s*(.*?)\s*(?:,\s*(.*))?\)', '@Test(\\2)\n  @UseDataProvider(\\1)', content)
 
   # clean up @Test() to @Test
   content_new = re.sub('@Test\(\)', '@Test', content_new)
 
+  print('data_provider_rename_tuples: ', data_provider_rename_tuples)
   for tup in data_provider_rename_tuples:
    content_new = re.sub(r"@UseDataProvider\({}\)".format(tup[0]), "@UseDataProvider(\"{}\")".format(tup[1]), content_new)
 
@@ -193,7 +189,6 @@ def migrate_data_providers(content):
 
   # In JUnit data providers have to be public and static.
   content_new = re.sub(r'(public|private) Object\[\]\[\] (.*)\(\)', 'public static Object[][] \\2()', content_new)
-  content_new = re.sub(r'(public|private) Iterator<Object\[\]> (.*)\(\)', 'public static Iterator<Object[]> \\2()', content_new)
 
   return content_new
 
@@ -221,12 +216,17 @@ assertThrows(
 """
 def migrate_exceptions(content):
 
-  if 'expectedExceptionsMessageRegExp' not in content:
-    return re.sub('expectedExceptions', 'expected', content)
 
-  pattern = r'@Test\(expectedExceptions\s*=\s*([^\)]+)\s*,\s*\n*expectedExceptionsMessageRegExp\s*=\s*(.*?)\s*\)'
+  content_new = content
+  if 'expectedExceptions' in content:
+    content_new = re.sub('expectedExceptions', 'expected', content)
+
+  if 'expectedExceptionsMessageRegExp' not in content:
+      return content_new
+
+  pattern = r'@Test\(expected\s*=\s*([^\)]+)\s*,\s*\n*expectedExceptionsMessageRegExp\s*=\s*(.*?)\s*\)'
   new_content = []
-  content_iter = iter(content.split('\n'))
+  content_iter = iter(content_new.split('\n'))
   for line in content_iter:
     at_test_annotation_line = ''
     method_body = []
@@ -272,28 +272,15 @@ def migrate_asserts(content):
   # TestNG has an overload for assertEquals that takes parameters:
   # obj1, obj2, message. JUnit also has this overload but takes parameters:
   # message, obj1, obj2.
-  assert_equals_overload_regex = re.compile(
-      r'assertEquals\((.*), (.*), (("|String).*)\);')
-  content_new = assert_equals_overload_regex.sub('assertEquals(\\3, \\1, \\2);',
-                                                 content)
 
-  multiline_assert_equals_overload_regex = re.compile(
-      r'assertEquals\((.*), (.*),\s*(".*\s*\+.*)\);')
-  content_new = multiline_assert_equals_overload_regex.sub(
-      'assertEquals(\\3, \\1, \\2);', content_new)
+  content_new = re.sub('org.testng.Assert',
+                       'org.junit.Assert', content)
 
-  multiline_assert_equals_overload_regex = re.compile(
-      r'assertEquals\((.*), (.*),\s*(".*\s*\+ String.*\s*.*)\);')
-  content_new = multiline_assert_equals_overload_regex.sub(
-      'assertEquals(\\3, \\1, \\2);', content_new)
+  content_new = re.sub('org.junit.Assert.assertTrue',
+      'com.addepar.infra.library.lang.assertion.Assert.assertTrue', content_new)
 
-  # TestNG has overloads for assert(True|False|NotNull|Same) taking two
-  # parameters: condition, message. JUnit also has these overloads but takes
-  # parameters: message, condition.
-  assert_conditional_regex = re.compile(
-      r'assert(True|False|NotNull|Same)\((.*), (.*)\);')
-  content_new = assert_conditional_regex.sub('assert\\1(\\3, \\2);',
-                                             content_new)
+  content_new = re.sub('org.junit.Assert.assertEquals',
+      'com.addepar.infra.library.lang.assertion.Assert.assertEquals', content_new)
 
   return content_new
 
@@ -504,7 +491,7 @@ def migrate_buck(buck_module):
     if os.path.isfile(buck_file):
         with open(buck_file, 'r') as f_in:
             content = f_in.read()
-            if 'java_test_internal' in content and 'junit' not in content:
+            if 'java_test_internal' in content and 'test_type = "junit"' not in content:
                 print('Converting ', buck_file)
                 content = re.sub(r'java_test_internal\(',
                                  'java_test_internal(\n\ttest_type = "junit",', content)
@@ -516,7 +503,11 @@ def migrate_tests(test_dir):
     test_files = []
     for path, dir, files in os.walk(test_dir):
         for file in files:
-            if file.endswith('.java') and not file.endswith('AbstractJerseyTestNG.java'):
+            if file.endswith('.java') \
+                    and not file.endswith('AbstractJerseyTestNG.java') \
+                    and not file.endswith('Assert.java') \
+                    and not file.endswith('AssertionUtils.java') \
+                    and 'NullChecking' not in file:
                 test_files.append(os.path.join(path, file))
 
     for file_name in test_files:

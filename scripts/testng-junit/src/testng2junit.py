@@ -142,9 +142,11 @@ def migrate_testng_annotations(content):
   content_new = re.sub('@Test\n  void', '@Test\n  public void', content_new)
   content_new = re.sub('@Test\n  private', '@Test\n  public', content_new)
   content_new = re.sub('@After\n  private', '@After\n  public', content_new)
+  content_new = re.sub('@After\n  void', '@After\n  public void', content_new)
   content_new = re.sub('@Before\n  public static', '@Before\n  public', content_new)
   content_new = re.sub('@Before\n  private static', '@Before\n  public', content_new)
   content_new = re.sub('@Before\n  private', '@Before\n  public', content_new)
+  content_new = re.sub('@Before\n  void', '@Before\n  public void', content_new)
   content_new = re.sub(r'@Test\(enabled = false\)', '@Ignore @Test', content_new)
 
   return content_new
@@ -160,6 +162,7 @@ def migrate_data_providers(content):
       return content
 
   content_new = re.sub(r'private Object\[\]\[\]', 'public Object[][]', content)
+  content_new = re.sub(r'\)\n  Object\[\]\[\]', ')\n  public Object[][]', content_new)
   data_provider_regex = re.compile(
       r'@DataProvider\(name\s*=\s*(.*)\)\s*public\s+Object\[\]\[\]\s+(\w+)\(\)')
   data_provider_rename_tuples = re.findall(data_provider_regex, content_new)
@@ -169,10 +172,10 @@ def migrate_data_providers(content):
   # @Test(dataProvider="MillisInstantNoNanos")
 
   #  r'@Test\(dataProvider\s*=\s*(.*)\s*,\s*(.*)\)'
-  content_new = re.sub(r'@Test\(dataProvider\s*=\s*(.*?)\s*(?:,\s*(.*))?\)', '@Test(\\2)\n  @UseDataProvider(\\1)', content)
+  content_new = re.sub(r'@Test\(dataProvider\s*=\s*(.*?)\s*(?:,\s*(.*))?\)', '@Test(\\2)\n  @UseDataProvider(\\1)', content_new)
 
   # clean up @Test() to @Test
-  content_new = re.sub('@Test\(\)', '@Test', content_new)
+  content_new = re.sub(r'@Test\(\)', '@Test', content_new)
 
   print('data_provider_rename_tuples: ', data_provider_rename_tuples)
   for tup in data_provider_rename_tuples:
@@ -452,7 +455,7 @@ def extract_constructor_arguments(class_name, content):
 
     # combine everything to oneline
     arguments = []
-    match = re.search('\((.*?)\)', ''.join(lines))
+    match = re.search(r'\((.*?)\)', ''.join(lines))
     if match:
         arguments = [a.strip() for a in match.group(1).strip().split(',') if a.strip()]
         print('injected arguments: ', arguments)
@@ -476,7 +479,7 @@ def replace_guice_module_with_injector(content):
     modules = []
     for m in module_line:
         new_module = re.sub(r'^', 'new ', m.strip())
-        new_module = re.sub('\.class', '()', new_module)
+        new_module = re.sub(r'\.class', '()', new_module)
         modules.append(new_module)
 
     return '\n  private final Injector injector = Guice.createInjector({});'\

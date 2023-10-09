@@ -27,7 +27,20 @@ content = """
         {0d, true, true, true},
         {1E-2, false, false, false}
     };
+  }  
+  
+  @DataProvider(name = "adiaHosts")
+  Object[][] providesAdiaHosts() throws URISyntaxException {
+    return new Object[][] {
+        {new URI("https://adia1.prod.addepar.com")},
+        {new URI("https://adia1:4447")}
+    };
   }
+
+  @Test(dataProvider = "adiaHosts")
+  public void parsesUrlPrefixFromValidAdiaHost(URI adiaHost) {
+    assertThat(AdiaReverseProxyServletModule.getUrlPrefix(adiaHost), is("/proxy-adia1"));
+  }  
 """
 
 expected = """
@@ -59,12 +72,25 @@ expected = """
         {1E-2, false, false, false}
     };
   }
+
+  @DataProvider
+  public static Object[][] providesAdiaHosts() throws URISyntaxException {
+    return new Object[][] {
+        {new URI("https://adia1.prod.addepar.com")},
+        {new URI("https://adia1:4447")}
+    };
+  }
+
+  @Test
+  @UseDataProvider("providesAdiaHosts")
+  public void parsesUrlPrefixFromValidAdiaHost(URI adiaHost) {
+    assertThat(AdiaReverseProxyServletModule.getUrlPrefix(adiaHost), is("/proxy-adia1"));
+  }    
 """
 
 
 def test_migrate_data_providers():
     content_new = testng2junit.migrate_data_providers(content)
     assert_equal_content(content_new, expected)
-
 
 

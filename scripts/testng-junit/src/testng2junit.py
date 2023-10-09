@@ -510,8 +510,9 @@ def migrate_buck(buck_module):
                 content = re.sub(r'TEST_DEPS = \[',
                                  'TEST_DEPS = [\n\t"//infra/library/lang:test_utils",', content)
 
-                with open(buck_file, 'w') as fn:
-                    fn.write(content)
+            with open(buck_file, 'w') as fn_out:
+                print("write buck back - ", buck_file)
+                fn_out.write(content)
 
 
 def migrate_tests(test_dir):

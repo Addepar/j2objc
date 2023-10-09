@@ -1,5 +1,6 @@
 import sys
 
+
 def main():
   if len(sys.argv) != 3:
     print('usage: compare_tests.py <master-tc-test-file> <branch-tc-test-file>')
@@ -17,6 +18,7 @@ def main():
     branch_count = branch_tests.get(key)
     if master_count != branch_count:
       print("{} expected {}, but got {}".format(key, master_count, branch_count))
+
 
 def convert(file):
   data = {}

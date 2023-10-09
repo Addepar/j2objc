@@ -194,30 +194,28 @@ def migrate_data_providers(content):
   return content_new
 
 
-"""
-Replace 
-@Test(expectedExceptions = IllegalArgumentException.class) 
-
-with 
-@Test(expected = IllegalArgumentException.class) 
-
-OR 
-@Test(expected = IllegalArgumentException.class,
-    expectedExceptionsMessageRegExp = "some message")
-
-with 
-assertThrows(
-        () -> {
-          Config config = ConfigFactory.load().getConfig("test8." + BatuNotificationFilterTest.class.getPackageName());
-          new BatuNotificationFilter(config);
-        },
-        IllegalArgumentException.class,
-        "notification_filter.mode must be either 'include' or 'exclude'"
-);    
-"""
+###
+# Replace
+# @Test(expectedExceptions = IllegalArgumentException.class)
+#
+# with
+# @Test(expected = IllegalArgumentException.class)
+#
+# OR
+# @Test(expected = IllegalArgumentException.class,
+#     expectedExceptionsMessageRegExp = "some message")
+#
+# with
+# assertThrows(
+#         () -> {
+#           Config config = ConfigFactory.load().getConfig("test8." + BatuNotificationFilterTest.class.getPackageName());
+#           new BatuNotificationFilter(config);
+#         },
+#         IllegalArgumentException.class,
+#         "notification_filter.mode must be either 'include' or 'exclude'"
+# );
+#
 def migrate_exceptions(content):
-
-
   content_new = content
   if 'expectedExceptions' in content:
     content_new = re.sub('expectedExceptions', 'expected', content)
@@ -274,8 +272,14 @@ def migrate_asserts(content):
   # obj1, obj2, message. JUnit also has this overload but takes parameters:
   # message, obj1, obj2.
 
+  #replace assertNotNull
+  pattern = r'assertNotNull\(([^,]+),\s*"([^"]+)"\);'
+
+  # Use re.sub() to replace the pattern with the desired format
+  content_new = re.sub(pattern, r'assertNotNull("\2", \1);', content)
+
   content_new = re.sub('org.testng.Assert',
-                       'org.junit.Assert', content)
+                       'org.junit.Assert', content_new)
 
   content_new = re.sub('org.junit.Assert.assertTrue',
       'com.addepar.infra.library.lang.assertion.Assert.assertTrue', content_new)
@@ -285,30 +289,30 @@ def migrate_asserts(content):
 
   return content_new
 
-"""
-This replaces the following pattern
-
-@Guice(modules = SomeModule.class)
-public class SomeTest {
-
-  @Before
-  public void someTest() {
-  
-  }
-}
-
-..... with .....
-
-public class SomeTest {
-
-  private final Injector injector = Guice.createInjector(new SomeModule());
-
-  @Before
-  public void someTest() {
-    injector.injectMembers(this);  
-  }
-}
-"""
+#
+# This replaces the following pattern
+#
+# @Guice(modules = SomeModule.class)
+# public class SomeTest {
+#
+#   @Before
+#   public void someTest() {
+#
+#   }
+# }
+#
+# ..... with .....
+#
+# public class SomeTest {
+#
+#   private final Injector injector = Guice.createInjector(new SomeModule());
+#
+#   @Before
+#   public void someTest() {
+#     injector.injectMembers(this);
+#   }
+# }
+#
 def migrate_guice_annotation(content):
     if '@Guice' not in content:
         return content
@@ -370,27 +374,27 @@ def migrate_guice_annotation(content):
     return '\n'.join(new_content)
 
 
-"""
-This replaces the following pattern
-
-private final SomeServiceA serviceA;
-
-private final SomeServiceB serviceB;
-
-@Inject
-public SomeClass(SomeServiceA serviceA, SomeServiceB serviceB) {
-    this.serviceA = serviceA;
-    this.serviceB = serviceB;
-}
-
-..... with .....
-
-@Inject
-private SomeServiceA serviceA;
-
-@Inject
-private SomeServiceB serviceB;
-"""
+#
+# This replaces the following pattern
+#
+# private final SomeServiceA serviceA;
+#
+# private final SomeServiceB serviceB;
+#
+# @Inject
+# public SomeClass(SomeServiceA serviceA, SomeServiceB serviceB) {
+#     this.serviceA = serviceA;
+#     this.serviceB = serviceB;
+# }
+#
+# ..... with .....
+#
+# @Inject
+# private SomeServiceA serviceA;
+#
+# @Inject
+# private SomeServiceB serviceB;
+#
 def migrate_inject_constructor(class_name, content):
     if '@Inject' not in content or '@Test' not in content:
         return content
@@ -432,6 +436,7 @@ def migrate_inject_constructor(class_name, content):
         return '\n'.join(content_new)
     return content
 
+
 def extract_constructor_arguments(class_name, content):
     content_iter = iter(content.split('\n'))
     lines = []
@@ -453,6 +458,7 @@ def extract_constructor_arguments(class_name, content):
         print('injected arguments: ', arguments)
 
     return arguments
+
 
 def replace_guice_module_with_injector(content):
     if '@Guice' not in content:
@@ -549,6 +555,7 @@ def main():
       migrate_buck(buck_module)
 
   migrate_tests(test_dir)
+
 
 if __name__ == '__main__':
   sys.exit(main())

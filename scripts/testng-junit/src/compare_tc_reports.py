@@ -32,13 +32,13 @@ def convert(file):
       if 'Passed' in line and line.endswith('Test'):
         tokens = line.replace('  ', ' ').strip().split(' ')
         last = len(tokens) - 1
-        passed_count = int(tokens.index('Passed')-1)
+        passed_count = int(tokens[tokens.index('Passed')-1])
         passed_total += passed_count
 
-        skipped_count = int(tokens.index('Skipped')-1)
+        skipped_count = int(tokens[tokens.index('Skipped')-1])
         skipped_total += skipped_count
 
-        failed_count = int(tokens.index('Failed')-1)
+        failed_count = int(tokens[tokens.index('Failed')-1])
         failed_total += failed_count
 
         test_name = tokens[last]

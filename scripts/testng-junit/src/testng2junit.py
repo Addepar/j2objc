@@ -255,7 +255,6 @@ def migrate_exceptions(content):
                 method_body.append('    '+line)
                 line = next(content_iter)
 
-        print('at_test line: ', at_test_annotation_line)
         matches = re.search(pattern, at_test_annotation_line)
         print('expected exception + message matches:', matches)
         if matches:
@@ -505,7 +504,6 @@ def migrate_buck(buck_module):
         with open(buck_file, 'r') as f_in:
             content = f_in.read()
             if 'java_test_internal' in content and 'test_type = "junit"' not in content:
-                print('Converting ', buck_file)
                 content = re.sub(r'java_test_internal\(',
                                  'java_test_internal(\n\ttest_type = "junit",', content)
 
@@ -514,7 +512,6 @@ def migrate_buck(buck_module):
                                  'TEST_DEPS = [\n\t"//infra/library/lang:test_utils",', content)
 
             with open(buck_file, 'w') as fn_out:
-                print("write buck back - ", buck_file)
                 fn_out.write(content)
 
 

@@ -72,5 +72,4 @@ expected = """
 
 def test_migrate_exceptions():
     content_new = testng2junit.migrate_exceptions(content)
-    print(content_new)
     assert_equal_content(content_new, expected)

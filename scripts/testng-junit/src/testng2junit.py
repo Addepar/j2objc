@@ -26,19 +26,19 @@ import re
 throw_template = '''    assertThrows(
       () -> {
 %s
-        },
-        %s,
-        %s
+      },
+      %s,
+      %s
     );'''
 
 
 throw_with_callable_template = '''    assertCallableThrows(
       () -> {
 %s
-          return null;
-        },
-        %s,
-        %s
+        return null;
+      },
+      %s,
+      %s
     );'''
 
 
@@ -233,7 +233,8 @@ def migrate_exceptions(content):
     at_test_annotation_line = ''
     method_body = []
     method_signature = ''
-    if '@Test' in line and 'expected' in line:
+    if '@Test' in line and 'expected' in line\
+            and ('expectedMessageRegExp' in line or ')' not in line):
         at_test_annotation_line = line
         while ')' not in line:
             line = next(content_iter)
@@ -250,16 +251,18 @@ def migrate_exceptions(content):
             # parse out method lines
             line = next(content_iter)
             while '  }' != line:
-                method_body.append('\t\t'+line)
+                # 4 spaces.
+                method_body.append('    '+line)
                 line = next(content_iter)
 
+        print('at_test line: ', at_test_annotation_line)
         matches = re.search(pattern, at_test_annotation_line)
         print('expected exception + message matches:', matches)
         if matches:
           expected_exceptions = matches.group(1).strip()
           message_regex = matches.group(2).strip()
           # add the method boby replacement
-          method_template = throw_with_callable_template if 'throws' in method_signature else throw_template
+          method_template = throw_with_callable_template if 'throws ' in method_signature else throw_template
           method_body_value = method_template % ('\n'.join(method_body), expected_exceptions, message_regex)
           new_content.append(method_body_value)
 

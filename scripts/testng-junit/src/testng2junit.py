@@ -23,23 +23,23 @@ import os
 import sys
 import re
 
-throw_template = '''  assertThrows(
-        () -> {
+throw_template = '''    assertThrows(
+      () -> {
 %s
         },
         %s,
         %s
-  );'''
+    );'''
 
 
-throw_with_callable_template = '''  assertCallableThrows(
-        () -> {
+throw_with_callable_template = '''    assertCallableThrows(
+      () -> {
 %s
           return null;
         },
         %s,
         %s
-  );'''
+    );'''
 
 
 before_inject_template = '''  @Before

@@ -17,13 +17,15 @@ expected = '''
 @Guice
 public class SomeTest {
 
-  @Rule public TestRule rule = TestRequestScopes.rule();
+  @Rule
+  public TestRule rule = TestRequestScopes.rule();
 }
 
 public class SomeTest
 {
 
-  @Rule public TestRule rule = TestRequestScopes.rule();
+  @Rule
+  public TestRule rule = TestRequestScopes.rule();
 }
 '''
 def test_migrate_listeners():

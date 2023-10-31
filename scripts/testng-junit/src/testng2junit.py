@@ -426,7 +426,7 @@ def migrate_listeners(content):
         if len(set(listener_match)) > 1 or listener_match[0] != "TestRequestScopes.Listener.class":
             raise Exception("Unsupported listener")
 
-    junit_rule_line = "\n  @Rule public TestRule rule = TestRequestScopes.rule();"
+    junit_rule_line = "\n  @Rule\n  public TestRule rule = TestRequestScopes.rule();"
     new_content = []
     content_iter = iter(content.split('\n'))
     for line in content_iter:

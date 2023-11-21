@@ -1,4 +1,4 @@
-from setup import testng2junit4
+from setup import testng2junit5
 from setup import assert_equal_content
 
 content = """
@@ -8,7 +8,7 @@ content = """
   public void testGetLast_failUnbounded() {
     DateRangeUtil.getLast(UNBOUNDED_ABOVE);
   }
-  
+
   @Test(expectedExceptions = IllegalStateException.class)
   public void throwsIfThereAreMultiplePartitions(){
     when(messagingAdmin.hasDestinationBlocking(any())).thenReturn(true);
@@ -37,14 +37,14 @@ content = """
         new Destination(TEST_ENVIRONMENT, "destination"), 1);
     strategy.load("test.group", Type.PUBSUB, ImmutableSet.of(dp1, dp2));
   }
-  
+
   @Test(
       expectedExceptions = IllegalArgumentException.class,
       expectedExceptionsMessageRegExp = "Invalid rate: .*")
   public void testInvalidTier() {
     new RateTierImpl(-1, -5.0, 0.0, 1.0);
   }
-     
+
 """
 
 expected = """
@@ -68,7 +68,7 @@ expected = """
     var destination = MessagingTestUtils.createRandom();
     var offsetProvider = new DestinationOffsetProviderImpl(messagingAdmin, destination);
     offsetProvider.getLatestOffset();
-  }  
+  }
 
   @Test
   public void throwsIfMessagingAdminCannotConnect() {
@@ -83,7 +83,7 @@ expected = """
         ".*Timed out.*"
     );
   }
-  
+
   @Test
   public void verifyMultiplePartitionsUnsupported() {
     assertThrows(
@@ -97,8 +97,8 @@ expected = """
       IllegalArgumentException.class,
       ".*encountered multiple partitions.*"
     );
-  }    
-  
+  }
+
   @Test
   public void testInvalidTier() {
     assertThrows(
@@ -113,5 +113,5 @@ expected = """
 
 
 def test_migrate_exceptions():
-    content_new = testng2junit4.migrate_exceptions(content)
+    content_new = testng2junit5.migrate_exceptions(content)
     assert_equal_content(content_new, expected)

@@ -1,4 +1,4 @@
-from setup import testng2junit4
+from setup import testng2junit5
 from setup import assert_equal_content
 
 content = """
@@ -9,7 +9,7 @@ content = """
         {"hello!world"}
     };
   }
-  
+
   @Test(dataProvider = BAD_CHAR_NAMES, expectedExceptions = IllegalArgumentException.class)
   public void testReserved(String name) {
     JsonApiNaming.checkName(name);
@@ -27,8 +27,8 @@ content = """
         {0d, true, true, true},
         {1E-2, false, false, false}
     };
-  }  
-  
+  }
+
   @DataProvider(name = "adiaHosts")
   Object[][] providesAdiaHosts() throws URISyntaxException {
     return new Object[][] {
@@ -40,7 +40,7 @@ content = """
   @Test(dataProvider = "adiaHosts")
   public void parsesUrlPrefixFromValidAdiaHost(URI adiaHost) {
     assertThat(AdiaReverseProxyServletModule.getUrlPrefix(adiaHost), is("/proxy-adia1"));
-  }  
+  }
 """
 
 expected = """
@@ -85,12 +85,12 @@ expected = """
   @UseDataProvider("providesAdiaHosts")
   public void parsesUrlPrefixFromValidAdiaHost(URI adiaHost) {
     assertThat(AdiaReverseProxyServletModule.getUrlPrefix(adiaHost), is("/proxy-adia1"));
-  }    
+  }
 """
 
 
 def test_migrate_data_providers():
-    content_new = testng2junit4.migrate_data_providers(content)
+    content_new = testng2junit5.migrate_data_providers(content)
     assert_equal_content(content_new, expected)
 
 

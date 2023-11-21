@@ -131,7 +131,7 @@ def migrate_testng_annotations(content):
   # Use @Before/@After over @BeforeClass/@AfterClass since the latter requires the method to be static.
   # Most of our methods are more member friendly.
   content_new = re.sub('@BeforeSuite', '@Before', content_new)
-  content_new = re.sub('@BeforeMethod(\(alwaysRun\s+=\s+true\))?', '@Before', content_new)
+  content_new = re.sub(r'@BeforeMethod(\(alwaysRun\s+=\s+true\))?', '@Before', content_new)
   content_new = re.sub('@BeforeClass', '@Before', content_new)
   content_new = re.sub('@BeforeTest', '@Before', content_new)
 
@@ -148,7 +148,7 @@ def migrate_testng_annotations(content):
   # Migrate AbstractJerseyTestNG to AbstractJerseyJUnit
   content_new = re.sub('AbstractJerseyTestNG', 'AbstractJerseyJUnit', content_new)
   if 'AbstractJerseyJUnit' in content_new:
-      content_new = re.sub('\s+(this.)?resetMocks\(\);', '', content_new)
+      content_new = re.sub(r'\s+(this.)?resetMocks\(\);', '', content_new)
 
   # Ensure test methods are public
   content_new = re.sub('@Test\n  void', '@Test\n  public void', content_new)
@@ -304,7 +304,7 @@ def migrate_asserts(content):
   content_new = re.sub('org.testng.Assert',
                        'org.junit.Assert', content_new)
 
-  content_new = re.sub('expectThrows(?=\()','assertThrows', content_new)
+  content_new = re.sub(r'expectThrows(?=\()','assertThrows', content_new)
 
   content_new = re.sub('org.junit.Assert.assertTrue',
       'com.addepar.infra.library.lang.assertion.Assert.assertTrue', content_new)
@@ -506,7 +506,7 @@ def migrate_inject_constructor(class_name, content):
                 if '@Inject' in line:
                     line = next(content_iter)
                     # match any constructor variation
-                    match_constructor = re.search(r'\b(public\s+)?' + class_name + '\s*\(', line)
+                    match_constructor = re.search(r'\b(public\s+)?' + class_name + r'\s*\(', line)
                     if match_constructor:
                         # next skipping while there is a }
                         while '}' not in line:
@@ -554,7 +554,7 @@ def replace_guice_module_with_injector(content):
     print("module_matches: ", module_matches)
 
     if not module_matches:
-        if re.search('@Guice\s+', content):
+        if re.search(r'@Guice\s+', content):
             return '\n  private final Injector injector = Guice.createInjector();'
         else:
             raise Exception("Cannot extract @Guice modules. Double check the regexp.")

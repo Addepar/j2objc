@@ -56,7 +56,7 @@ throw_with_callable_template_no_message = '''    assertCallableThrows(
     );'''
 
 
-before_inject_template = '''  @Before
+before_inject_template = '''  @BeforeAll
   public void setup() {
     injector.injectMembers(this);
   }
@@ -388,10 +388,10 @@ def migrate_guice_annotation(content):
         # insert it before the first @Test
         insert_idx = 0
         for idx, line in enumerate(new_content):
-            if '@After' in line or '@BeforeClass' in line or '@Test' in line:
+            if ('@After' in line or '@Before' in line or
+                ('@Test' in line and '@TestInstance' not in line)):
                 insert_idx = idx
                 break
-
         if insert_idx:
             new_content.insert(insert_idx, before_inject_template)
 

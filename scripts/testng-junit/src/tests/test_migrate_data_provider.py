@@ -88,7 +88,6 @@ expected = """
 
 def test_migrate_data_providers():
     content_new = testng2junit5.migrate_data_providers(content)
-    print(content_new)
     assert_equal_content(content_new, expected)
 
 

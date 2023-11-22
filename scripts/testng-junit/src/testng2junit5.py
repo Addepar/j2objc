@@ -104,6 +104,7 @@ import org.junit.jupiter.params.provider.MethodSource;''', content_new)
   # this forces @Guice annotation error, but it's needed for Guice.createInjector
   content_new = re.sub('import org.testng.annotations.Guice;',
                        '''import com.google.inject.Guice;
+import com.google.inject.Injector;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;''', content_new)
 

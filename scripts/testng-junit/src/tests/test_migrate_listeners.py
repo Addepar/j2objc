@@ -15,19 +15,16 @@ public class SomeTest
 
 expected = '''
 @Guice
+@ExtendWith(TestRequestScopeListener.class)
 public class SomeTest {
-
-  @Rule
-  public TestRule rule = TestRequestScopes.rule();
 }
 
+@ExtendWith({TestRequestScopeListener.class})
 public class SomeTest
 {
-
-  @Rule
-  public TestRule rule = TestRequestScopes.rule();
 }
 '''
 def test_migrate_listeners():
     content_new = testng2junit5.migrate_listeners(content)
+    print(content_new)
     assert_equal_content(content_new, expected)

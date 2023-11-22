@@ -104,7 +104,8 @@ import org.junit.jupiter.params.provider.MethodSource;''', content_new)
   # this forces @Guice annotation error, but it's needed for Guice.createInjector
   content_new = re.sub('import org.testng.annotations.Guice;',
                        '''import com.google.inject.Guice;
-import com.google.inject.Injector;''', content_new)
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestInstance.Lifecycle;''', content_new)
 
   # include @Disabled
   imports = ['org.junit.jupiter.api.Test;']
@@ -123,16 +124,12 @@ import com.google.inject.Injector;''', content_new)
   # Listeners will be migrated to be junit @ExtendWith
   if '@Listeners' in content_new:
       content_new = re.sub('import org.testng.annotations.Listeners;\n', '', content_new)
+      imports.append('import com.addepar.infra.library.testing.requestscope.TestRequestScopeListener;')
       imports.append('import org.junit.jupiter.api.extension.ExtendWith;')
 
   content_new = re.sub('org.junit.jupiter.api.Test;', '\n'.join(imports), content_new)
 
   return content_new
-
-
-def migrate_base_class(content):
-    content_new = re.sub('BaseJerseyTestNG', 'BaseJerseyJUnit', content)
-    return content_new
 
 
 def migrate_testng_annotations(content):
@@ -156,20 +153,10 @@ def migrate_testng_annotations(content):
   content_new = re.sub('NullCheckingInstanceTestBase', 'NullCheckingInstanceJunitTestBase', content_new)
   content_new = re.sub('NullCheckingBuilderTestBase', 'NullCheckingBuilderJunitTestBase', content_new)
 
-  # Migrate AbstractJerseyTestNG to AbstractJerseyJUnit
+  # Migrate JerseyTestNG to JerseyJUnit
   content_new = re.sub('AbstractJerseyTestNG', 'AbstractJerseyJUnit', content_new)
-  if 'AbstractJerseyJUnit' in content_new:
-      content_new = re.sub(r'\s+(this.)?resetMocks\(\);', '', content_new)
+  content_new = re.sub('BaseJerseyTestNG', 'BaseJerseyJUnit', content_new)
 
-  # Ensure test methods are public
-#   content_new = re.sub('@Test\n  void', '@Test\n  public void', content_new)
-#   content_new = re.sub('@Test\n  private', '@Test\n  public', content_new)
-#   content_new = re.sub('@After\n  private', '@After\n  public', content_new)
-#   content_new = re.sub('@After\n  void', '@After\n  public void', content_new)
-#   content_new = re.sub('@Before\n  public static', '@Before\n  public', content_new)
-#   content_new = re.sub('@Before\n  private static', '@Before\n  public', content_new)
-#   content_new = re.sub('@Before\n  private', '@Before\n  public', content_new)
-#   content_new = re.sub('@Before\n  void', '@Before\n  public void', content_new)
   content_new = re.sub(r'@Test\(enabled = false\)', '@Disabled @Test', content_new)
 
   return content_new
@@ -329,7 +316,7 @@ def migrate_asserts(content):
 # @Guice(modules = SomeModule.class)
 # public class SomeTest {
 #
-#   @Before
+#   @BeforeAll
 #   public void someTest() {
 #
 #   }
@@ -341,7 +328,7 @@ def migrate_asserts(content):
 #
 #   private final Injector injector = Guice.createInjector(new SomeModule());
 #
-#   @Before
+#   @BeforeAll
 #   public void someTest() {
 #     injector.injectMembers(this);
 #   }
@@ -370,6 +357,8 @@ def migrate_guice_annotation(content):
 
         # handle insertion of injector
         if 'public class' in line or 'public final class' in line:
+            left_spaces = ' ' * (len(line) - len(line.lstrip()))
+            new_content.append(left_spaces + '@TestInstance(Lifecycle.PER_CLASS)')
             new_content.append(line)
 
             if '{' in line:
@@ -419,9 +408,8 @@ def migrate_guice_annotation(content):
 #
 # ..... with .....
 #
-# public class SomeTest {
-#   @Rule public TestRule rule = TestRequestScopes.rule();
-#
+# @ExtendWith(TestRequestScopeListener.class)
+# public class SomeTest {#
 #   ...
 # }
 #
@@ -429,37 +417,9 @@ def migrate_listeners(content):
     if '@Listeners(' not in content:
         return content
 
-    listener_match = re.compile(r'@Listeners\(\{?([^\)\}]+)\}?\)').findall(content)
-    if listener_match:
-        print("Listeners found: ", listener_match)
-        if len(set(listener_match)) > 1 or listener_match[0] != "TestRequestScopes.Listener.class":
-            raise Exception("Unsupported listener")
-
-    junit_rule_line = "\n  @Rule\n  public TestRule rule = TestRequestScopes.rule();"
-    new_content = []
-    content_iter = iter(content.split('\n'))
-    for line in content_iter:
-        if '@Listeners(' in line:
-            # Skip it
-            while ')' not in line:
-                # skip the next line too since this might span across multiple lines
-                line = next(content_iter)
-            continue
-
-        # handle insertion of junit rule
-        if 'public class' in line or 'public final class' in line:
-            new_content.append(line)
-
-            if '{' in line:
-                new_content.append(junit_rule_line)
-            else:
-                # inject injector after public class SomeClass {
-                insert_line_after_method(new_content, content_iter, junit_rule_line)
-
-            continue
-
-        new_content.append(line)
-    return '\n'.join(new_content)
+    content_new = re.sub('@Listeners', '@ExtendWith', content)
+    content_new = re.sub('TestRequestScopes.Listener', 'TestRequestScopeListener', content_new)
+    return content_new
 
 #
 # This replaces the following pattern
@@ -616,7 +576,6 @@ def migrate_tests(test_dir):
             print("Converting ", file_name)
             content = f.read()
             content_new = migrate_imports(content)
-            content_new = migrate_base_class(content_new)
             content_new = migrate_testng_annotations(content_new)
             content_new = migrate_data_providers(content_new)
             content_new = migrate_guice_annotation(content_new)

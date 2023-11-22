@@ -31,6 +31,12 @@ throw_template = '''    assertThrows(
       %s
     );'''
 
+throw_template_no_message = '''    assertThrows(
+      () -> {
+%s
+      },
+      %s
+    );'''
 
 throw_with_callable_template = '''    assertCallableThrows(
       () -> {
@@ -38,6 +44,14 @@ throw_with_callable_template = '''    assertCallableThrows(
         return null;
       },
       %s,
+      %s
+    );'''
+
+throw_with_callable_template_no_message = '''    assertCallableThrows(
+      () -> {
+%s
+        return null;
+      },
       %s
     );'''
 
@@ -51,40 +65,38 @@ before_inject_template = '''  @Before
 
 def migrate_imports(content):
   """Updates import statements from TestNG to JUnit."""
-  content_new = re.sub('org.testng.annotations.Test', 'org.junit.Test', content)
+  content_new = re.sub('org.testng.annotations.Test', 'org.junit.jupiter.api.Test', content)
 
   #Before
   content_new = re.sub('org.testng.annotations.BeforeSuite',
-                       'org.junit.Before', content_new)
+                       'org.junit.jupiter.api.BeforeAll', content_new)
 
   content_new = re.sub('org.testng.annotations.BeforeMethod',
-                       'org.junit.Before', content_new)
+                       'org.junit.jupiter.api.BeforeEach', content_new)
 
   content_new = re.sub('org.testng.annotations.BeforeClass',
-                       'org.junit.Before', content_new)
+                       'org.junit.jupiter.api.BeforeAll', content_new)
 
   content_new = re.sub('org.testng.annotations.BeforeTest',
-                       'org.junit.Before', content_new)
+                       'org.junit.jupiter.api.BeforeAll', content_new)
 
   #After
   content_new = re.sub('org.testng.annotations.AfterMethod',
-                       'org.junit.After', content_new)
+                       'org.junit.jupiter.api.AfterEach', content_new)
 
   content_new = re.sub('org.testng.annotations.AfterClass',
-                       'org.junit.After', content_new)
+                       'org.junit.jupiter.api.AfterEach', content_new)
 
   content_new = re.sub('org.testng.annotations.AfterTest',
-                       'org.junit.After', content_new)
+                       'org.junit.jupiter.api.AfterEach', content_new)
 
   content_new = re.sub(
       'import org.testng.annotations.DataProvider;',
-      '''import com.tngtech.java.junit.dataprovider.DataProvider;
-import com.tngtech.java.junit.dataprovider.DataProviderRunner;
-import com.tngtech.java.junit.dataprovider.UseDataProvider;
-import org.junit.runner.RunWith;''', content_new)
+      '''import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;''', content_new)
 
   content_new = re.sub('org.testng.AssertJUnit',
-                       'org.junit.Assert', content_new)
+                       'org.junit.jupiter.api.Assertions', content_new)
 
   content_new = re.sub('org.testng.Assert.(assert|expect)Throws',
                        'com.addepar.infra.library.lang.assertion.Assert.assertThrows', content_new)
@@ -94,27 +106,26 @@ import org.junit.runner.RunWith;''', content_new)
                        '''import com.google.inject.Guice;
 import com.google.inject.Injector;''', content_new)
 
-  # include @Ignore
-  imports = ['org.junit.Test;']
+  # include @Disabled
+  imports = ['org.junit.jupiter.api.Test;']
   if '@Test(enabled' in content_new:
-      imports.append('import org.junit.Ignore;')
+      imports.append('import org.junit.jupiter.api.Disabled;')
 
   if 'expectedExceptionsMessageRegExp' in content_new:
     imports.append('import static com.addepar.infra.library.lang.assertion.AssertionUtils.assertThrows;')
     imports.append('import static com.addepar.infra.library.lang.assertion.Assert.assertCallableThrows;')
 
-  # if we have @Guice, we also need @Before imports to support before_inject_template.
+  # if we have @Guice, we also need @BeforeAll imports to support before_inject_template.
   # refer to migrate_guice_annotation
-  if '@Guice' in content_new and '@Before' not in content_new:
-    imports.append('import org.junit.Before;')
+  if '@Guice' in content_new and '@BeforeAll' not in content_new:
+    imports.append('import org.junit.jupiter.api.BeforeAll;')
 
-  # Listeners will be migrated to be junit rules
+  # Listeners will be migrated to be junit @ExtendWith
   if '@Listeners' in content_new:
       content_new = re.sub('import org.testng.annotations.Listeners;\n', '', content_new)
-      imports.append('import org.junit.Rule;')
-      imports.append('import org.junit.rules.TestRule;')
+      imports.append('import org.junit.jupiter.api.extension.ExtendWith;')
 
-  content_new = re.sub('org.junit.Test;', '\n'.join(imports), content_new)
+  content_new = re.sub('org.junit.jupiter.api.Test;', '\n'.join(imports), content_new)
 
   return content_new
 
@@ -130,14 +141,14 @@ def migrate_testng_annotations(content):
 
   # Use @Before/@After over @BeforeClass/@AfterClass since the latter requires the method to be static.
   # Most of our methods are more member friendly.
-  content_new = re.sub('@BeforeSuite', '@Before', content_new)
-  content_new = re.sub(r'@BeforeMethod(\(alwaysRun\s+=\s+true\))?', '@Before', content_new)
-  content_new = re.sub('@BeforeClass', '@Before', content_new)
-  content_new = re.sub('@BeforeTest', '@Before', content_new)
+  content_new = re.sub('@BeforeSuite', '@BeforeAll', content_new)
+  content_new = re.sub(r'@BeforeMethod(\(alwaysRun\s+=\s+true\))?', '@BeforeEach', content_new)
+  content_new = re.sub('@BeforeClass', '@BeforeAll', content_new)
+  content_new = re.sub('@BeforeTest', '@BeforeAll', content_new)
 
-  content_new = re.sub('@AfterMethod', '@After', content_new)
-  content_new = re.sub('@AfterClass', '@After', content_new)
-  content_new = re.sub('@AfterTest', '@After', content_new)
+  content_new = re.sub('@AfterMethod', '@AfterEach', content_new)
+  content_new = re.sub('@AfterClass', '@AfterAll', content_new)
+  content_new = re.sub('@AfterTest', '@AfterAll', content_new)
 
   # migrate NullChecking*TestBase
   content_new = re.sub('NullCheckingClassTestBase', 'NullCheckingClassJunitTestBase', content_new)
@@ -151,61 +162,52 @@ def migrate_testng_annotations(content):
       content_new = re.sub(r'\s+(this.)?resetMocks\(\);', '', content_new)
 
   # Ensure test methods are public
-  content_new = re.sub('@Test\n  void', '@Test\n  public void', content_new)
-  content_new = re.sub('@Test\n  private', '@Test\n  public', content_new)
-  content_new = re.sub('@After\n  private', '@After\n  public', content_new)
-  content_new = re.sub('@After\n  void', '@After\n  public void', content_new)
-  content_new = re.sub('@Before\n  public static', '@Before\n  public', content_new)
-  content_new = re.sub('@Before\n  private static', '@Before\n  public', content_new)
-  content_new = re.sub('@Before\n  private', '@Before\n  public', content_new)
-  content_new = re.sub('@Before\n  void', '@Before\n  public void', content_new)
-  content_new = re.sub(r'@Test\(enabled = false\)', '@Ignore @Test', content_new)
+#   content_new = re.sub('@Test\n  void', '@Test\n  public void', content_new)
+#   content_new = re.sub('@Test\n  private', '@Test\n  public', content_new)
+#   content_new = re.sub('@After\n  private', '@After\n  public', content_new)
+#   content_new = re.sub('@After\n  void', '@After\n  public void', content_new)
+#   content_new = re.sub('@Before\n  public static', '@Before\n  public', content_new)
+#   content_new = re.sub('@Before\n  private static', '@Before\n  public', content_new)
+#   content_new = re.sub('@Before\n  private', '@Before\n  public', content_new)
+#   content_new = re.sub('@Before\n  void', '@Before\n  public void', content_new)
+  content_new = re.sub(r'@Test\(enabled = false\)', '@Disabled @Test', content_new)
 
   return content_new
 
 
 def migrate_data_providers(content):
   """TestNG allows a DataProvider to be renamed."""
-  # Make a list of tuples mapping the
-  # new name to original name.
-  # @DataProvider(name="MillisInstantNoNanos")
-  # Object[][] provider_factory_millis_long() {
   if '@DataProvider' not in content:
       return content
 
-  content_new = re.sub(r'private Object\[\]\[\]', 'public Object[][]', content)
-  content_new = re.sub(r'private static Object\[\]\[\]', 'public static Object[][]', content_new)
-  content_new = re.sub(r'\)\n  Object\[\]\[\]', ')\n  public Object[][]', content_new)
+  '''
+  Make a list of tuples mapping the new name to original name.
+
+  @DataProvider(name="MillisInstantNoNanos")
+  Object[][] provider_factory_millis_long() {
+  '''
   data_provider_regex = re.compile(
-      r'@DataProvider\(name\s*=\s*(.*)\)\s*public\s+Object\[\]\[\]\s+(\w+)\(\)')
-  data_provider_rename_tuples = re.findall(data_provider_regex, content_new)
-
-  # Remove the renamed data provider from test annotation and put it in.
-  # @UseDataProvider annotation
-  # @Test(dataProvider="MillisInstantNoNanos")
-
-  #  r'@Test\(dataProvider\s*=\s*(.*)\s*,\s*(.*)\)'
-  content_new = re.sub(r'@Test\(dataProvider\s*=\s*(.*?)\s*(?:,\s*(.*))?\)', '@Test(\\2)\n  @UseDataProvider(\\1)', content_new)
-
-  # clean up @Test() to @Test
-  content_new = re.sub(r'@Test\(\)', '@Test', content_new)
-
+      r'@DataProvider\(name\s*=\s*(.*)\)\s*.*Object\[\]\[\]\s+(\w+)\(\)')
+  data_provider_rename_tuples = re.findall(data_provider_regex, content)
   print('data_provider_rename_tuples: ', data_provider_rename_tuples)
+
+  # Remove @DataProvider annotation on provider functions
+  content_new = re.sub(r'.*@DataProvider.*\n', '', content)
+
+  '''
+  Set up test function annotations to
+
+  @ParameterizedTest
+  @MethodSource("MillisInstantNoNanos")
+  '''
+  content_new = re.sub(r'@Test\(dataProvider\s*=\s*(.*?)\s*(?:,\s*(.*))?\)', '@ParameterizedTest(\\2)\n  @MethodSource(\\1)', content_new)
+
+  # Convert @ParameterizedTest() to @ParameterizedTest
+  content_new = re.sub(r'@ParameterizedTest\(\)', '@ParameterizedTest', content_new)
+
+  # Use provider function name in @MethodSource
   for tup in data_provider_rename_tuples:
-   content_new = re.sub(r"@UseDataProvider\({}\)".format(tup[0]), "@UseDataProvider(\"{}\")".format(tup[1]), content_new)
-
-  content_new = re.sub('@DataProvider.*', '@DataProvider', content_new)
-
-  if 'DataProvider' in content_new and '@RunWith(DataProviderRunner.class)' not in content_new:
-    content_new = re.sub('public class',
-                         '@RunWith(DataProviderRunner.class)\npublic class',
-                         content_new)
-    content_new = re.sub('public final class',
-                         '@RunWith(DataProviderRunner.class)\npublic final class',
-                         content_new)
-
-  # In JUnit data providers have to be public and static.
-  content_new = re.sub(r'(public|private) Object\[\]\[\] (.*)\(\)', 'public static Object[][] \\2()', content_new)
+    content_new = re.sub(r"@MethodSource\({}\)".format(tup[0]), "@MethodSource(\"{}\")".format(tup[1]), content_new)
 
   return content_new
 
@@ -236,16 +238,16 @@ def migrate_exceptions(content):
   if 'expectedExceptions' in content:
     content_new = re.sub('expectedExceptions', 'expected', content)
 
-  if 'expectedExceptionsMessageRegExp' not in content:
+  if 'expected' not in content:
       return content_new
 
-  pattern = r'@Test\s*\(\s*expected\s*=\s*([^\)]+)\s*,\s*\n*expectedMessageRegExp\s*=\s*(.*?)\s*\)'
+  pattern = r'(@Test|@ParameterizedTest)\s*\(\s*expected\s*=\s*([^\)\,]+)\s*(,\s*\n*expectedMessageRegExp\s*=\s*(.*?)\s*)?\)'
   new_content = []
   content_iter = iter(content_new.split('\n'))
   for line in content_iter:
     method_body = []
     method_signature = ''
-    if '@Test' in line and '(' in line:
+    if ('@Test' in line or '@ParameterizedTest' in line ) and '(' in line:
         at_test_annotation_line = line
         while ')' not in line:
             line = next(content_iter)
@@ -259,7 +261,7 @@ def migrate_exceptions(content):
 
         print('expected exception + message matches:', matches)
 
-        new_content.append('  @Test')
+        new_content.append('  ' + matches.group(1).strip())
         # method line
         while '{' not in line:
             line = next(content_iter)
@@ -275,14 +277,15 @@ def migrate_exceptions(content):
                 line = next(content_iter)
 
 
-        if matches:
-          expected_exceptions = matches.group(1).strip()
-          message_regex = matches.group(2).strip()
-          # add the method boby replacement
+        expected_exceptions = matches.group(2).strip()
+        if matches.group(4):
+          message_regex = matches.group(4).strip()
           method_template = throw_with_callable_template if 'throws ' in method_signature else throw_template
           method_body_value = method_template % ('\n'.join(method_body), expected_exceptions, message_regex)
-          new_content.append(method_body_value)
-
+        else:
+          method_template = throw_with_callable_template_no_message if 'throws ' in method_signature else throw_template_no_message
+          method_body_value = method_template % ('\n'.join(method_body), expected_exceptions)
+        new_content.append(method_body_value)
 
     new_content.append(line)
 

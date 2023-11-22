@@ -409,7 +409,7 @@ def migrate_guice_annotation(content):
 # ..... with .....
 #
 # @ExtendWith(TestRequestScopeListener.class)
-# public class SomeTest {#
+# public class SomeTest {
 #   ...
 # }
 #

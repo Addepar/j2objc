@@ -7,7 +7,7 @@ content_1 = """
     @Guice(modules = SomeModule.class)
     public class SomeTest {
 
-      @Before
+      @BeforeAll
       public void someTest() {
 
       }
@@ -21,7 +21,7 @@ expected_1 = """
 
       private final Injector injector = Guice.createInjector(new SomeModule());
 
-      @Before
+      @BeforeAll
       public void someTest() {
         injector.injectMembers(this);
       }
@@ -33,7 +33,7 @@ content_2 = """
     @Guice
     public class SomeTest {
 
-      @Before
+      @BeforeAll
       public void someTest() {
 
       }
@@ -47,7 +47,7 @@ expected_2 = """
 
       private final Injector injector = Guice.createInjector();
 
-      @Before
+      @BeforeAll
       public void someTest() {
         injector.injectMembers(this);
       }
@@ -60,7 +60,7 @@ content_3 = """
         Test.ModuleB.class})
     public class SomeTest {
 
-      @Before
+      @BeforeAll
       public void someTest() {
 
       }
@@ -74,7 +74,7 @@ expected_3 = """
 
       private final Injector injector = Guice.createInjector(new TestModuleA(), new Test.ModuleB());
 
-      @Before
+      @BeforeAll
       public void someTest() {
         injector.injectMembers(this);
       }

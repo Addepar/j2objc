@@ -305,7 +305,7 @@ def migrate_asserts(content):
   content_new = re.sub(pattern, r'assertNotNull("\2", \1);', content)
 
   content_new = re.sub('org.testng.Assert',
-                       'org.junit.Assert', content_new)
+                       'org.junit.jupiter.api.Assertions', content_new)
 
   content_new = re.sub(r'expectThrows(?=\()','assertThrows', content_new)
 
@@ -381,10 +381,10 @@ def migrate_guice_annotation(content):
             continue
 
         # handle insertion of injectMember
-        #  @Before
+        #   @BeforeAll
         #   public void beforeMethod() {
         #   ....insert here....
-        if '@Before' in line:
+        if '@BeforeAll' in line:
             new_content.append(line)
             # this should be the line of the method and keep adding the line until we get {
             # insert injectMember as the first line below the below method.

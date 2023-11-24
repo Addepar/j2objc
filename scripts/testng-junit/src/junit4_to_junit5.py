@@ -74,8 +74,8 @@ def migrate_guice_injector(content):
     content_new = re.sub('@BeforeEach', '@BeforeAll', content)
 
     if "@BeforeAll" in content_new:
-        content_new = re.sub('import com.google.inject.Injector;',
-                             '''import com.google.inject.Injector;
+        content_new = re.sub('import com.google.inject.Guice;',
+                             '''import com.google.inject.Guice;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;''', content_new)
         content_new = re.sub(r'public(\s*final)?\s*class', '@TestInstance(Lifecycle.PER_CLASS)\npublic class', content_new)
@@ -151,14 +151,18 @@ import static org.junit.jupiter.api.Assertions.assertThrows;''', content)
 
 def migrate_asserts(content):
 
-    if "assertNotNull" not in content:
-        return content
+    content_new = content
+    if "assertNotNull" in content_new:
+        # replace assertNotNull
+        pattern = re.compile(r'assertNotNull\((".*?")\s*,\s*(.*?)\);')
 
-    # replace assertNotNull
-    pattern = re.compile(r'assertNotNull\((".*?")\s*,\s*(.*?)\);')
+        # Use re.sub() to replace the pattern with the desired format
+        content_new = re.sub(pattern, r'assertNotNull(\2, \1);', content_new)
 
-    # Use re.sub() to replace the pattern with the desired format
-    content_new = re.sub(pattern, r'assertNotNull(\2, \1);', content)
+    if "assertTrue" in content_new:
+        # replace assertTrue
+        pattern = re.compile(r'assertTrue\((".*?")\s*,\s*(.*?)\);')
+        content_new = re.sub(pattern, r'assertTrue(\2, \1);', content_new)
 
     return content_new
 

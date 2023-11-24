@@ -9,6 +9,7 @@ content = """
     GffAccountValidation gffAccountValidation = gffValidation.getAccounts().getItem().get(0);
     assertNotNull("gff", gff);
     assertNotNull("emptyGff", emptyGff);
+    assertTrue("Empty test", true);
 """
 
 expected = """    
@@ -18,6 +19,7 @@ expected = """
     GffAccountValidation gffAccountValidation = gffValidation.getAccounts().getItem().get(0);
     assertNotNull(gff, "gff");
     assertNotNull(emptyGff, "emptyGff");    
+    assertTrue(true, "Empty test");
 """
 
 

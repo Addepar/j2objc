@@ -31,15 +31,18 @@ import org.junit.jupiter.api.AfterAll;''', content_new)
     return content_new
 
 
-def migrate_testng_annotations(content):
+def migrate_annotations(content):
     content_new = content
+
+    content_new = re.sub('@BeforeClass', '@BeforeAll', content_new)
+
     if '@BeforeEach' not in content_new:
-        content_new = re.sub('@Before', '@BeforeEach', content_new)
+        content_new = re.sub(r'@Before(?!\s*All)', '@BeforeEach', content_new)
 
     content_new = re.sub('@AfterMethod', '@AfterEach', content_new)
 
     if '@AfterEach' not in content_new:
-        content_new = re.sub('@After', '@AfterEach', content_new)
+        content_new = re.sub(r'@After(?!\s*All)', '@AfterEach', content_new)
 
     content_new = re.sub('@AfterClass', '@AfterAll', content_new)
 
@@ -64,16 +67,19 @@ def migrate_mockito_rule_annotation(content):
 
 
 def migrate_guice_injector(content):
-    if 'createInjector' not in content:
+    if 'createInjector' not in content \
+            or '@TestInstance(Lifecycle.PER_CLASS)' in content:
         return content
 
-    content_new = re.sub('import com.google.inject.Injector;',
-                         '''import com.google.inject.Injector;
-import org.junit.jupiter.api.TestInstance;
-import org.junit.jupiter.api.TestInstance.Lifecycle;''', content)
+    content_new = re.sub('@BeforeEach', '@BeforeAll', content)
 
-    content_new = re.sub('public class', '@TestInstance(Lifecycle.PER_CLASS)\npublic class', content_new)
-    content_new = re.sub('@BeforeEach', '@BeforeAll', content_new)
+    if "@BeforeAll" in content_new:
+        content_new = re.sub('import com.google.inject.Injector;',
+                             '''import com.google.inject.Injector;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestInstance.Lifecycle;''', content_new)
+        content_new = re.sub(r'public(\s*final)?\s*class', '@TestInstance(Lifecycle.PER_CLASS)\npublic class', content_new)
+
     return content_new
 
 
@@ -161,12 +167,20 @@ def migrate_data_provider(content):
     if "@UseDataProvider" not in content:
         return content
 
-    content_new = re.sub('import com.tngtech.java.junit.dataprovider.UseDataProvider;',
-        '''import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;''', content)
+    content_new = re.sub('''import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;''',
+                         'import org.junit.jupiter.params.ParameterizedTest;', content)
 
-    content_new = re.sub(r'@RunWith\(DataProviderRunner\.class\)\s*public(\s*final)?\s*class', 'public class', content_new)
+    content_new = re.sub('com.tngtech.java.junit.dataprovider.UseDataProvider',
+                         'org.junit.jupiter.params.provider.MethodSource', content_new)
+
+    content_new = re.sub(r'@RunWith\(DataProviderRunner\.class\)\s*public(\s*final)?\s*class',
+                         'public class', content_new)
+
     content_new = re.sub(r'@Test\s*@UseDataProvider', '@ParameterizedTest\n  @MethodSource', content_new)
+
+    content_new = re.sub(r'@DataProvider\s*public static', 'public static', content_new)
+
     return content_new
 
 
@@ -186,7 +200,7 @@ def migrate_tests(test_dir):
             print("Converting ", file_name)
             content = f.read()
             content_new = migrate_imports(content)
-            content_new = migrate_testng_annotations(content_new)
+            content_new = migrate_annotations(content_new)
             content_new = migrate_mockito_rule_annotation(content_new)
             content_new = migrate_guice_injector(content_new)
             content_new = migrate_exceptions(content_new)

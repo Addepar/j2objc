@@ -42,6 +42,7 @@ throw_with_callable_template = '''    assertThrows(
       %s,
       () -> {
 %s
+        return null;
       },
       %s
     );'''
@@ -50,6 +51,7 @@ throw_with_callable_template_no_message = '''    assertThrows(
       %s,
       () -> {
 %s
+        return null;
       }
     );'''
 

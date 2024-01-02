@@ -13,6 +13,8 @@ throw_template = '''    assertThrows(
 def migrate_imports(content):
     """Updates import statements from TestNG to JUnit."""
     content_new = re.sub('org.junit.Test', 'org.junit.jupiter.api.Test', content)
+    content_new = re.sub('org.testng.annotations.Test', 'org.junit.jupiter.api.Test', content_new)
+
 
     # Before
     content_new = re.sub('org.junit.BeforeClass',
@@ -20,6 +22,10 @@ def migrate_imports(content):
 
     content_new = re.sub('org.junit.BeforeMethod',
                          'org.junit.jupiter.api.BeforeEach', content_new)
+
+    content_new = re.sub('org.testng.annotations.BeforeMethod',
+                         'org.junit.jupiter.api.BeforeEach', content_new)
+
 
     content_new = re.sub('import org.junit.Before;',
                          '''import org.junit.jupiter.api.BeforeEach;
@@ -184,6 +190,7 @@ def migrate_asserts(content):
                          'org.junit.jupiter.api.Assertions;', content_new)
 
     content_new = re.sub('    Assert.assert', '    Assertions.assert', content_new)
+    content_new = re.sub(r'Assert\.fail', 'Assertions.fail', content_new)
 
 
     return content_new

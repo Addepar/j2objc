@@ -167,6 +167,25 @@ def migrate_testng_annotations(content):
     return content_new
 
 
+def migrate_mockito_rule_annotation(content):
+
+    if 'MockitoExtension' in content or '@Mock' not in content:
+        return content
+
+    content_new = re.sub(
+      'import org.mockito.Mock;',
+      '''import org.mockito.Mock;
+import org.junit.jupiter.api.extension.ExtendWith;      
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
+''', content)
+
+    content_new = re.sub('public class', '@ExtendWith(MockitoExtension.class)\n'
+                                         '@MockitoSettings(strictness = Strictness.LENIENT)\npublic class', content_new)
+    return content_new
+
+
 def migrate_data_providers(content):
     """TestNG allows a DataProvider to be renamed."""
     if '@DataProvider' not in content:
@@ -584,6 +603,7 @@ def migrate_tests(test_dir):
             content = f.read()
             content_new = migrate_imports(content)
             content_new = migrate_testng_annotations(content_new)
+            content_new = migrate_mockito_rule_annotation(content_new)
             content_new = migrate_data_providers(content_new)
             content_new = migrate_guice_annotation(content_new)
             content_new = migrate_listeners(content_new)

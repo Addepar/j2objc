@@ -236,62 +236,62 @@ def migrate_data_providers(content):
 # );
 #
 def migrate_exceptions(content):
-  content_new = content
-  if 'expectedExceptions' in content:
-    content_new = re.sub('expectedExceptions', 'expected', content)
+    content_new = content
+    if 'expectedExceptions' in content:
+        content_new = re.sub('expectedExceptions', 'expected', content)
 
-  if 'expected' not in content:
-      return content_new
+    if 'expected' not in content:
+        return content_new
 
-  pattern = r'(@Test|@ParameterizedTest)\s*\(\s*expected\s*=\s*([^\)\,]+)\s*(,\s*\n*expectedMessageRegExp\s*=\s*(.*?)\s*)?\)'
-  new_content = []
-  content_iter = iter(content_new.split('\n'))
-  for line in content_iter:
-    method_body = []
-    method_signature = ''
-    if ('@Test' in line or '@ParameterizedTest' in line ) and '(' in line:
-        at_test_annotation_line = line
-        while ')' not in line:
-            line = next(content_iter)
-            at_test_annotation_line += line
-
-        matches = re.search(pattern, at_test_annotation_line)
-
-        if not matches:
-            new_content.append(at_test_annotation_line)
-            continue
-
-        print('expected exception + message matches:', matches)
-
-        new_content.append('  ' + matches.group(1).strip())
-        # method line
-        while '{' not in line:
-            line = next(content_iter)
-            new_content.append(line)
-            method_signature += line
-
-        if '{' in line:
-            # parse out method lines
-            line = next(content_iter)
-            while not line.startswith('  }'):
-                # 4 spaces.
-                method_body.append('    '+line)
+    pattern = r'(@Test|@ParameterizedTest)\s*\(\s*expected\s*=\s*([^\)\,]+)\s*(,\s*\n*expectedMessageRegExp\s*=\s*(.*?)\s*)?\)'
+    new_content = []
+    content_iter = iter(content_new.split('\n'))
+    for line in content_iter:
+        method_body = []
+        method_signature = ''
+        if ('@Test' in line or '@ParameterizedTest' in line ) and '(' in line:
+            at_test_annotation_line = line
+            while ')' not in line:
                 line = next(content_iter)
+                at_test_annotation_line += line
 
+            matches = re.search(pattern, at_test_annotation_line)
 
-        expected_exceptions = matches.group(2).strip()
-        if matches.group(4):
-          message_regex = matches.group(4).strip()
-          method_template = throw_with_callable_template if 'throws ' in method_signature else throw_template
-          method_body_value = method_template % (expected_exceptions, '\n'.join(method_body), message_regex)
-        else:
-          method_template = throw_with_callable_template_no_message if 'throws ' in method_signature else throw_template_no_message
-          method_body_value = method_template % (expected_exceptions, '\n'.join(method_body))
-        new_content.append(method_body_value)
+            if not matches:
+                new_content.append(at_test_annotation_line)
+                continue
 
-    new_content.append(line)
+            print('expected exception + message matches:', matches)
 
-  return '\n'.join(new_content)
+            new_content.append('  ' + matches.group(1).strip())
+            # method line
+            while '{' not in line:
+                line = next(content_iter)
+                new_content.append(line)
+                method_signature += line
+
+            if '{' in line:
+                # parse out method lines
+                line = next(content_iter)
+                while not line.startswith('  }'):
+                    # 4 spaces.
+                    method_body.append('    '+line)
+                    line = next(content_iter)
+
+            expected_exceptions = matches.group(2).strip()
+            if matches.group(4):
+                message_regex = matches.group(4).strip()
+                method_template = throw_with_callable_template if 'throws ' in method_signature else throw_template
+                method_body_value = method_template % (expected_exceptions, '\n'.join(method_body), message_regex)
+            else:
+                method_template = throw_with_callable_template_no_message if 'throws ' in method_signature else throw_template_no_message
+                method_body_value = method_template % (expected_exceptions, '\n'.join(method_body))
+
+            new_content.append(method_body_value)
+
+        new_content.append(line)
+
+    return '\n'.join(new_content)
 
 
 def migrate_asserts(content):

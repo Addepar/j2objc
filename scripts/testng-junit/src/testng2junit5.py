@@ -295,35 +295,35 @@ def migrate_exceptions(content):
 
 
 def migrate_asserts(content):
-  """Converts TestNG assertions to JUnit."""
-  # TestNG has an overload for assertEquals that takes parameters:
-  # obj1, obj2, message. JUnit also has this overload but takes parameters:
-  # message, obj1, obj2.
+    """Converts TestNG assertions to JUnit."""
+    # TestNG has an overload for assertEquals that takes parameters:
+    # obj1, obj2, message. JUnit also has this overload but takes parameters:
+    # message, obj1, obj2.
 
-  #replace assertNotNull
-  pattern = r'assertNotNull\(([^;,]+),\s*"([^"]+)"\);'
+    # replace assertNotNull
+    pattern = r'assertNotNull\(([^;,]+),\s*"([^"]+)"\);'
 
-  # Use re.sub() to replace the pattern with the desired format
-  content_new = re.sub(pattern, r'assertNotNull("\2", \1);', content)
+    # Use re.sub() to replace the pattern with the desired format
+    content_new = re.sub(pattern, r'assertNotNull("\2", \1);', content)
 
-  content_new = re.sub('org.testng.Assert',
-                       'org.junit.jupiter.api.Assertions', content_new)
+    content_new = re.sub('org.testng.Assert',
+                         'org.junit.jupiter.api.Assertions', content_new)
 
-  content_new = re.sub(r'expectThrows(?=\()','assertThrows', content_new)
+    content_new = re.sub(r'expectThrows(?=\()','assertThrows', content_new)
 
-  content_new = re.sub('org.junit.Assert.assertTrue',
-      'com.addepar.infra.library.lang.assertion.Assert.assertTrue', content_new)
+    content_new = re.sub('org.junit.Assert.assertTrue',
+                         'com.addepar.infra.library.lang.assertion.Assert.assertTrue', content_new)
 
-  content_new = re.sub('org.junit.Assert.assertFalse',
-                       'com.addepar.infra.library.lang.assertion.Assert.assertFalse', content_new)
+    content_new = re.sub('org.junit.Assert.assertFalse',
+                         'com.addepar.infra.library.lang.assertion.Assert.assertFalse', content_new)
 
-  content_new = re.sub('org.junit.Assert.assertEquals',
-      'com.addepar.infra.library.lang.assertion.Assert.assertEquals', content_new)
+    content_new = re.sub('org.junit.Assert.assertEquals',
+                         'com.addepar.infra.library.lang.assertion.Assert.assertEquals', content_new)
 
-  content_new = re.sub('org.junit.Assert.assertNotEquals',
-                       'com.addepar.infra.library.lang.assertion.Assert.assertNotEquals', content_new)
+    content_new = re.sub('org.junit.Assert.assertNotEquals',
+                         'com.addepar.infra.library.lang.assertion.Assert.assertNotEquals', content_new)
 
-  return content_new
+    return content_new
 
 
 #

@@ -405,7 +405,7 @@ def migrate_guice_annotation(content):
         insert_idx = 0
         for idx, line in enumerate(new_content):
             if ('@After' in line or '@Before' in line or
-                ('@Test' in line and '@TestInstance' not in line)):
+                    ('@Test' in line and '@TestInstance' not in line)):
                 insert_idx = idx
                 break
         if insert_idx:
@@ -579,7 +579,7 @@ def migrate_buck(buck_module):
 
 def migrate_tests(test_dir):
     test_files = []
-    for path, dir, files in os.walk(test_dir):
+    for path, directory, files in os.walk(test_dir):
         for file in files:
             if file.endswith('.java') \
                     and not file.endswith('AbstractJerseyTestNG.java') \
@@ -625,4 +625,4 @@ def main():
 
 
 if __name__ == '__main__':
-  sys.exit(main())
+    sys.exit(main())

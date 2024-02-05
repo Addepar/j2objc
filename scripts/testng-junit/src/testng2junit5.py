@@ -133,48 +133,44 @@ import org.junit.jupiter.api.TestInstance.Lifecycle;''', content_new)
 
 
 def migrate_testng_annotations(content):
-  content_new = re.sub('@Test\npublic class', 'public class', content)
-  content_new = re.sub('@Guice\npublic abstract class', 'public abstract class', content_new)
+    content_new = re.sub('@Test\npublic class', 'public class', content)
+    content_new = re.sub('@Guice\npublic abstract class', 'public abstract class', content_new)
 
-  # Use @Before/@After over @BeforeClass/@AfterClass since the latter requires the method to be static.
-  # Most of our methods are more member friendly.
-  content_new = re.sub('@BeforeSuite', '@BeforeAll', content_new)
-  content_new = re.sub(r'@BeforeMethod(\(alwaysRun\s+=\s+true\))?', '@BeforeEach', content_new)
+    # Use @Before/@After over @BeforeClass/@AfterClass since the latter requires the method to be static.
+    # Most of our methods are more member friendly.
+    content_new = re.sub('@BeforeSuite', '@BeforeAll', content_new)
+    content_new = re.sub(r'@BeforeMethod(\(alwaysRun\s+=\s+true\))?', '@BeforeEach', content_new)
 
-  # enforce static behavior for BeforeAll
-  content_new = re.sub(r'@BeforeClass\n(\s*)(public|private|protected)(.)*void', r'@BeforeAll\n\1\2 void', content_new)
-  content_new = re.sub(r'@BeforeTest\n(\s*)(public|private|protected)(.)*void', r'@BeforeAll\n\1\2 void', content_new)
-  content_new = re.sub('@BeforeClass', '@BeforeAll', content_new)
-  content_new = re.sub('@BeforeTest', '@BeforeAll', content_new)
+    # enforce static behavior for BeforeAll
+    content_new = re.sub(r'@BeforeClass\n(\s*)(public|private|protected)(.)*void', r'@BeforeAll\n\1\2 void', content_new)
+    content_new = re.sub(r'@BeforeTest\n(\s*)(public|private|protected)(.)*void', r'@BeforeAll\n\1\2 void', content_new)
+    content_new = re.sub('@BeforeClass', '@BeforeAll', content_new)
+    content_new = re.sub('@BeforeTest', '@BeforeAll', content_new)
 
-  # the `alwaysRun` parameter is not supported in JUnit
-  content_new = re.sub(
-      '(@AfterMethod|@AfterClass|@AfterTest)(\(alwaysRun(\s*)=(\s*)+true\))?',
-      '\\1',
-      content_new
-  )
+    # the `alwaysRun` parameter is not supported in JUnit
+    content_new = re.sub('(@AfterMethod|@AfterClass|@AfterTest)(\(alwaysRun(\s*)=(\s*)+true\))?', '\\1', content_new)
 
-  content_new = re.sub('@AfterMethod', '@AfterEach', content_new)
-  content_new = re.sub('@AfterClass', '@AfterAll', content_new)
-  content_new = re.sub('@AfterTest', '@AfterAll', content_new)
+    content_new = re.sub('@AfterMethod', '@AfterEach', content_new)
+    content_new = re.sub('@AfterClass', '@AfterAll', content_new)
+    content_new = re.sub('@AfterTest', '@AfterAll', content_new)
 
-  # migrate NullChecking*TestBase
-  content_new = re.sub('NullCheckingClassTestBase', 'NullCheckingClassJunitTestBase', content_new)
-  content_new = re.sub('NullCheckingEnumTestBase', 'NullCheckingEnumJunitTestBase', content_new)
-  content_new = re.sub('NullCheckingInstanceTestBase', 'NullCheckingInstanceJunitTestBase', content_new)
-  content_new = re.sub('NullCheckingBuilderTestBase', 'NullCheckingBuilderJunitTestBase', content_new)
+    # migrate NullChecking*TestBase
+    content_new = re.sub('NullCheckingClassTestBase', 'NullCheckingClassJunitTestBase', content_new)
+    content_new = re.sub('NullCheckingEnumTestBase', 'NullCheckingEnumJunitTestBase', content_new)
+    content_new = re.sub('NullCheckingInstanceTestBase', 'NullCheckingInstanceJunitTestBase', content_new)
+    content_new = re.sub('NullCheckingBuilderTestBase', 'NullCheckingBuilderJunitTestBase', content_new)
 
-  # Migrate JerseyTestNG to JerseyJUnit
-  content_new = re.sub('AbstractJerseyTestNG', 'AbstractJerseyJUnit', content_new)
-  content_new = re.sub('BaseJerseyTestNG', 'BaseJerseyJUnit', content_new)
+    # Migrate JerseyTestNG to JerseyJUnit
+    content_new = re.sub('AbstractJerseyTestNG', 'AbstractJerseyJUnit', content_new)
+    content_new = re.sub('BaseJerseyTestNG', 'BaseJerseyJUnit', content_new)
 
-  content_new = re.sub(r'@Test\(enabled(\s*)=(\s*)false\)', '@Disabled @Test', content_new)
+    content_new = re.sub(r'@Test\(enabled(\s*)=(\s*)false\)', '@Disabled @Test', content_new)
 
-  # Ensure test methods are public
-  content_new = re.sub('@Test\n  void', '@Test\n  public void', content_new)
-  content_new = re.sub('@Test\n  private', '@Test\n  public', content_new)
+    # Ensure test methods are public
+    content_new = re.sub('@Test\n  void', '@Test\n  public void', content_new)
+    content_new = re.sub('@Test\n  private', '@Test\n  public', content_new)
 
-  return content_new
+    return content_new
 
 
 def migrate_data_providers(content):

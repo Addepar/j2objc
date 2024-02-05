@@ -325,6 +325,7 @@ def migrate_asserts(content):
 
   return content_new
 
+
 #
 # This replaces the following pattern
 #
@@ -379,7 +380,7 @@ def migrate_guice_annotation(content):
             if '{' in line:
                 new_content.append(injector_line)
             else:
-                #inject injector after public class SomeClass {
+                # inject injector after public class SomeClass {
                 insert_line_after_method(new_content, content_iter, injector_line)
 
             continue
@@ -398,7 +399,7 @@ def migrate_guice_annotation(content):
 
         new_content.append(line)
 
-    #check if there is any @Before in this test, if not add one.
+    # check if there is any @Before in this test, if not add one.
     if not add_injected_member:
         # insert it before the first @Test
         insert_idx = 0
@@ -436,6 +437,7 @@ def migrate_listeners(content):
     content_new = re.sub('TestRequestScopes.Listener', 'TestRequestScopeListener', content_new)
     return content_new
 
+
 #
 # This replaces the following pattern
 #
@@ -471,7 +473,7 @@ def migrate_inject_constructor(class_name, content):
         for line in content_iter:
             if parsing:
                 for argument in injected_arguments:
-                    #check if the argument has annotation, for example - @InProcessMode ChannelFactory channelFactory
+                    # check if the argument has annotation, for example - @InProcessMode ChannelFactory channelFactory
                     additional_annotation = ''
                     if '@' in argument:
                         additional_annotation, argument = argument.split(' ', 1)
@@ -609,17 +611,17 @@ def extrac_class_name(file):
 
 
 def main():
-  if len(sys.argv) == 1:
-    print('usage: {} <directory_to_migrate>'.format(sys.argv[0]))
-    sys.exit(1)
+    if len(sys.argv) == 1:
+        print('usage: {} <directory_to_migrate>'.format(sys.argv[0]))
+        sys.exit(1)
 
-  buck_module = sys.argv[1]
-  test_dir = buck_module
-  if 'src/test' not in buck_module:
-      test_dir = buck_module + '/src/test'
-      migrate_buck(buck_module)
+    buck_module = sys.argv[1]
+    test_dir = buck_module
+    if 'src/test' not in buck_module:
+        test_dir = buck_module + '/src/test'
+        migrate_buck(buck_module)
 
-  migrate_tests(test_dir)
+    migrate_tests(test_dir)
 
 
 if __name__ == '__main__':

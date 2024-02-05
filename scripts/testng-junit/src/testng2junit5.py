@@ -178,40 +178,41 @@ def migrate_testng_annotations(content):
 
 
 def migrate_data_providers(content):
-  """TestNG allows a DataProvider to be renamed."""
-  if '@DataProvider' not in content:
-      return content
+    """TestNG allows a DataProvider to be renamed."""
+    if '@DataProvider' not in content:
+        return content
 
-  '''
-  Make a list of tuples mapping the new name to original name.
-
-  @DataProvider(name="MillisInstantNoNanos")
-  Object[][] provider_factory_millis_long() {
-  '''
-  data_provider_regex = re.compile(
+    '''
+    Make a list of tuples mapping the new name to original name.
+    
+    @DataProvider(name="MillisInstantNoNanos")
+    Object[][] provider_factory_millis_long() {
+    '''
+    data_provider_regex = re.compile(
       r'@DataProvider\(name\s*=\s*(.*)\)\s*.*Object\[\]\[\]\s+(\w+)\(\)')
-  data_provider_rename_tuples = re.findall(data_provider_regex, content)
-  print('data_provider_rename_tuples: ', data_provider_rename_tuples)
+    data_provider_rename_tuples = re.findall(data_provider_regex, content)
+    print('data_provider_rename_tuples: ', data_provider_rename_tuples)
 
-  # Remove @DataProvider annotation on provider functions
-  content_new = re.sub(r'.*@DataProvider.*\n', '', content)
+    # Remove @DataProvider annotation on provider functions
+    content_new = re.sub(r'.*@DataProvider.*\n', '', content)
 
-  '''
-  Set up test function annotations to
+    '''
+    Set up test function annotations to
+    
+    @ParameterizedTest
+    @MethodSource("MillisInstantNoNanos")
+    '''
+    content_new = re.sub(r'@Test\(dataProvider\s*=\s*(.*?)\s*(?:,\s*(.*))?\)',
+                         '@ParameterizedTest(\\2)\n  @MethodSource(\\1)', content_new)
 
-  @ParameterizedTest
-  @MethodSource("MillisInstantNoNanos")
-  '''
-  content_new = re.sub(r'@Test\(dataProvider\s*=\s*(.*?)\s*(?:,\s*(.*))?\)', '@ParameterizedTest(\\2)\n  @MethodSource(\\1)', content_new)
+    # Convert @ParameterizedTest() to @ParameterizedTest
+    content_new = re.sub(r'@ParameterizedTest\(\)', '@ParameterizedTest', content_new)
 
-  # Convert @ParameterizedTest() to @ParameterizedTest
-  content_new = re.sub(r'@ParameterizedTest\(\)', '@ParameterizedTest', content_new)
+    # Use provider function name in @MethodSource
+    for tup in data_provider_rename_tuples:
+        content_new = re.sub(r"@MethodSource\({}\)".format(tup[0]), "@MethodSource(\"{}\")".format(tup[1]), content_new)
 
-  # Use provider function name in @MethodSource
-  for tup in data_provider_rename_tuples:
-    content_new = re.sub(r"@MethodSource\({}\)".format(tup[0]), "@MethodSource(\"{}\")".format(tup[1]), content_new)
-
-  return content_new
+    return content_new
 
 
 ###

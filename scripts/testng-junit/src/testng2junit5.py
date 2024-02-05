@@ -64,72 +64,66 @@ before_inject_template = '''  @BeforeAll
 
 
 def migrate_imports(content):
-  """Updates import statements from TestNG to JUnit."""
-  content_new = re.sub('org.testng.annotations.Test', 'org.junit.jupiter.api.Test', content)
+    # Updates import statements from TestNG to JUnit.
+    content_new = re.sub('org.testng.annotations.Test', 'org.junit.jupiter.api.Test', content)
 
-  #Before
-  content_new = re.sub('org.testng.annotations.BeforeSuite',
-                       'org.junit.jupiter.api.BeforeAll', content_new)
+    # Before
+    content_new = re.sub('org.testng.annotations.BeforeSuite',
+                         'org.junit.jupiter.api.BeforeAll', content_new)
 
-  content_new = re.sub('org.testng.annotations.BeforeMethod',
-                       'org.junit.jupiter.api.BeforeEach', content_new)
+    content_new = re.sub('org.testng.annotations.BeforeMethod',
+                         'org.junit.jupiter.api.BeforeEach', content_new)
 
-  content_new = re.sub('org.testng.annotations.BeforeClass',
-                       'org.junit.jupiter.api.BeforeAll', content_new)
+    content_new = re.sub('org.testng.annotations.BeforeClass', 'org.junit.jupiter.api.BeforeAll', content_new)
 
-  content_new = re.sub('org.testng.annotations.BeforeTest',
-                       'org.junit.jupiter.api.BeforeAll', content_new)
+    content_new = re.sub('org.testng.annotations.BeforeTest', 'org.junit.jupiter.api.BeforeAll', content_new)
 
-  #After
-  content_new = re.sub('org.testng.annotations.AfterMethod',
-                       'org.junit.jupiter.api.AfterEach', content_new)
+    # After
+    content_new = re.sub('org.testng.annotations.AfterMethod', 'org.junit.jupiter.api.AfterEach', content_new)
 
-  content_new = re.sub('org.testng.annotations.AfterClass',
-                       'org.junit.jupiter.api.AfterAll', content_new)
+    content_new = re.sub('org.testng.annotations.AfterClass', 'org.junit.jupiter.api.AfterAll', content_new)
 
-  content_new = re.sub('org.testng.annotations.AfterTest',
-                       'org.junit.jupiter.api.AfterAll', content_new)
+    content_new = re.sub('org.testng.annotations.AfterTest', 'org.junit.jupiter.api.AfterAll', content_new)
 
-  content_new = re.sub(
-      'import org.testng.annotations.DataProvider;',
-      '''import org.junit.jupiter.params.ParameterizedTest;
+    content_new = re.sub('import org.testng.annotations.DataProvider;',
+                         '''import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;''', content_new)
 
-  content_new = re.sub('org.testng.AssertJUnit',
-                       'org.junit.jupiter.api.Assertions', content_new)
+    content_new = re.sub('org.testng.AssertJUnit',
+                         'org.junit.jupiter.api.Assertions', content_new)
 
-  content_new = re.sub('org.testng.Assert.(assert|expect)Throws',
-                       'com.addepar.infra.library.lang.assertion.Assert.assertThrows', content_new)
+    content_new = re.sub('org.testng.Assert.(assert|expect)Throws',
+                         'com.addepar.infra.library.lang.assertion.Assert.assertThrows', content_new)
 
-  # this forces @Guice annotation error, but it's needed for Guice.createInjector
-  content_new = re.sub('import org.testng.annotations.Guice;',
-                       '''import com.google.inject.Guice;
+    # this forces @Guice annotation error, but it's needed for Guice.createInjector
+    content_new = re.sub('import org.testng.annotations.Guice;',
+                         '''import com.google.inject.Guice;
 import com.google.inject.Injector;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;''', content_new)
 
-  # include @Disabled
-  imports = ['org.junit.jupiter.api.Test;']
-  if '@Test(enabled' in content_new:
-      imports.append('import org.junit.jupiter.api.Disabled;')
+    # include @Disabled
+    imports = ['org.junit.jupiter.api.Test;']
+    if '@Test(enabled' in content_new:
+        imports.append('import org.junit.jupiter.api.Disabled;')
 
-  if 'expectedExceptionsMessageRegExp' in content_new or 'expectedExceptions' in content_new:
-    imports.append('import static org.junit.jupiter.api.Assertions.assertThrows;')
+    if 'expectedExceptionsMessageRegExp' in content_new or 'expectedExceptions' in content_new:
+        imports.append('import static org.junit.jupiter.api.Assertions.assertThrows;')
 
-  # if we have @Guice, we also need @BeforeAll imports to support before_inject_template.
-  # refer to migrate_guice_annotation
-  if '@Guice' in content_new and '@BeforeAll' not in content_new:
-    imports.append('import org.junit.jupiter.api.BeforeAll;')
+    # if we have @Guice, we also need @BeforeAll imports to support before_inject_template.
+    # refer to migrate_guice_annotation
+    if '@Guice' in content_new and '@BeforeAll' not in content_new:
+        imports.append('import org.junit.jupiter.api.BeforeAll;')
 
-  # Listeners will be migrated to be junit @ExtendWith
-  if '@Listeners' in content_new:
-      content_new = re.sub('import org.testng.annotations.Listeners;\n', '', content_new)
-      imports.append('import com.addepar.infra.library.testing.requestscope.TestRequestScopeListener;')
-      imports.append('import org.junit.jupiter.api.extension.ExtendWith;')
+    # Listeners will be migrated to be junit @ExtendWith
+    if '@Listeners' in content_new:
+        content_new = re.sub('import org.testng.annotations.Listeners;\n', '', content_new)
+        imports.append('import com.addepar.infra.library.testing.requestscope.TestRequestScopeListener;')
+        imports.append('import org.junit.jupiter.api.extension.ExtendWith;')
 
-  content_new = re.sub('org.junit.jupiter.api.Test;', '\n'.join(imports), content_new)
+    content_new = re.sub('org.junit.jupiter.api.Test;', '\n'.join(imports), content_new)
 
-  return content_new
+    return content_new
 
 
 def migrate_testng_annotations(content):
@@ -246,7 +240,7 @@ def migrate_exceptions(content):
     for line in content_iter:
         method_body = []
         method_signature = ''
-        if ('@Test' in line or '@ParameterizedTest' in line ) and '(' in line:
+        if ('@Test' in line or '@ParameterizedTest' in line) and '(' in line:
             at_test_annotation_line = line
             while ')' not in line:
                 line = next(content_iter)
@@ -306,7 +300,7 @@ def migrate_asserts(content):
     content_new = re.sub('org.testng.Assert',
                          'org.junit.jupiter.api.Assertions', content_new)
 
-    content_new = re.sub(r'expectThrows(?=\()','assertThrows', content_new)
+    content_new = re.sub(r'expectThrows(?=\()', 'assertThrows', content_new)
 
     content_new = re.sub('org.junit.Assert.assertTrue',
                          'com.addepar.infra.library.lang.assertion.Assert.assertTrue', content_new)
@@ -525,8 +519,7 @@ def replace_guice_module_with_injector(content):
     if '@Guice' not in content:
         raise Exception("@Guice is expected")
 
-    modules_regex = re.compile(
-        r'@Guice\(\s*modules\s*=\s*\{?([^{}]+)\}?\)')
+    modules_regex = re.compile(r'@Guice\(\s*modules\s*=\s*\{?([^{}]+)}?\)')
     module_matches = re.findall(modules_regex, content)
     print("module_matches: ", module_matches)
 

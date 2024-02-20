@@ -104,7 +104,7 @@ import org.junit.jupiter.api.TestInstance.Lifecycle;''', content_new)
 
     # include @Disabled
     imports = ['org.junit.jupiter.api.Test;']
-    if '@Test(enabled' in content_new:
+    if '@Test(enabled' in content_new or '@Test (enabled' in content_new:
         imports.append('import org.junit.jupiter.api.Disabled;')
 
     if 'expectedExceptionsMessageRegExp' in content_new or 'expectedExceptions' in content_new:
@@ -158,7 +158,7 @@ def migrate_testng_annotations(content):
     content_new = re.sub('AbstractJerseyTestNG', 'AbstractJerseyJUnit', content_new)
     content_new = re.sub('BaseJerseyTestNG', 'BaseJerseyJUnit', content_new)
 
-    content_new = re.sub(r'@Test\(enabled(\s*)=(\s*)false\)', '@Disabled @Test', content_new)
+    content_new = re.sub(r'@Test\s*\(enabled(\s*)=(\s*)false\)', '@Disabled @Test', content_new)
 
     # Ensure test methods are public
     content_new = re.sub('@Test\n  void', '@Test\n  public void', content_new)
@@ -382,7 +382,7 @@ def migrate_guice_annotation(content):
             continue
 
         # handle insertion of injector
-        if 'public class' in line or 'public final class' in line:
+        if 'public class' in line or 'public final class' in line or 'abstract class' in line:
             left_spaces = ' ' * (len(line) - len(line.lstrip()))
             new_content.append(left_spaces + '@TestInstance(Lifecycle.PER_CLASS)')
             new_content.append(line)

@@ -221,7 +221,7 @@ def migrate_data_providers(content):
     for tup in data_provider_rename_tuples:
         # MethodSource needs to be static
         if not tup[2]:
-           content_new = re.sub(re.escape(f"{tup[3]} {tup[4]}"), f"static {tup[3]} {tup[4]}", content_new)
+            content_new = re.sub(re.escape(f"{tup[3]} {tup[4]}"), f"static {tup[3]} {tup[4]}", content_new)
         content_new = re.sub(r"@MethodSource\({}\)".format(tup[0]), "@MethodSource(\"{}\")".format(tup[4]), content_new)
 
     return content_new

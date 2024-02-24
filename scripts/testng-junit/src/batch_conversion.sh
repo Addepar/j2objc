@@ -2,27 +2,6 @@
 
 # Check if there are no arguments provided
 #
-#./domain/library/adia/BUCK
-#./domain/library/adpampbridge/BUCK
-#./domain/library/bulk-data-drop/BUCK
-#./domain/library/cashflow/BUCK
-#./domain/library/common-factor/BUCK
-#./domain/library/commonvaluetypes/BUCK
-#./domain/library/contact/BUCK
-#./domain/library/contactjsonhelper/BUCK
-#./domain/library/coordinator/BUCK
-#./domain/library/credential/BUCK
-#./domain/library/dataimport/BUCK
-#./domain/library/efp/BUCK
-#./domain/library/excel/BUCK
-#./domain/library/external-firmwide-views/BUCK
-#./domain/library/factor-collector/BUCK
-#./domain/library/factorfilters/BUCK
-#./domain/library/feature-visibility/BUCK
-#./domain/library/firm/BUCK
-#./domain/library/fxfwd/BUCK
-#./domain/library/gff/BUCK
-#./domain/library/gffvalidation/BUCK
 #
 
 modules=(

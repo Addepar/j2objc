@@ -73,9 +73,7 @@ def migrate_imports(content):
                          'org.junit.jupiter.api.BeforeEach', content_new)
 
     content_new = re.sub('org.testng.annotations.BeforeClass',
-                         '''org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.TestInstance;
-import org.junit.jupiter.api.TestInstance.Lifecycle;''', content_new)
+                         'org.junit.jupiter.api.BeforeAll', content_new)
 
     content_new = re.sub('org.testng.annotations.BeforeTest', 'org.junit.jupiter.api.BeforeAll', content_new)
 
@@ -116,7 +114,6 @@ import org.junit.jupiter.api.TestInstance.Lifecycle;''', content_new)
     if '@Guice' in content_new and '@BeforeAll' not in content_new:
         imports.append('import org.junit.jupiter.api.BeforeAll;')
 
-
     # Listeners will be migrated to be junit @ExtendWith
     if '@Listeners' in content_new:
         content_new = re.sub('import org.testng.annotations.Listeners;\n', '', content_new)
@@ -127,6 +124,13 @@ import org.junit.jupiter.api.TestInstance.Lifecycle;''', content_new)
 
     # replace other random imports
     content_new = re.sub('org.testng.FileAssert.fail', 'org.junit.jupiter.api.Assertions.fail', content_new)
+
+    # make sure beforeAll include TestInstance
+    if 'BeforeAll' in content_new and 'TestInstance' not in content_new:
+        content_new = re.sub('org.junit.jupiter.api.BeforeAll',
+                             '''org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestInstance.Lifecycle;''', content_new)
 
     return content_new
 
@@ -150,7 +154,7 @@ def migrate_testng_annotations(content):
     content_new = re.sub('@BeforeTest', '@BeforeAll', content_new)
 
     # the `alwaysRun` parameter is not supported in JUnit
-    content_new = re.sub('(@AfterMethod|@AfterClass|@AfterTest|@BeforeAll)(\(alwaysRun(\s*)=(\s*)+true\))?', '\\1', content_new)
+    content_new = re.sub(r'(@AfterMethod|@AfterClass|@AfterTest|@BeforeAll)(\(alwaysRun(\s*)=(\s*)+true\))?', '\\1', content_new)
 
     content_new = re.sub('@AfterMethod', '@AfterEach', content_new)
     content_new = re.sub('@AfterClass', '@AfterAll', content_new)

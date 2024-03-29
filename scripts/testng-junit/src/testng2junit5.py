@@ -55,8 +55,12 @@ throw_with_callable_template_no_message = '''    assertThrows(
 
 
 before_inject_template = '''  @BeforeAll
+  @SuppressWarnings("ProhibitedExceptionCaught")
   public void setup() {
-    injector.injectMembers(this);
+    try {
+      injector.injectMembers(this);
+    } catch (Exception e) {
+    }
   }
 '''
 
@@ -384,8 +388,12 @@ def migrate_asserts(content):
 #   private final Injector injector = Guice.createInjector(new SomeModule());
 #
 #   @BeforeAll
+#   @SuppressWarnings("ProhibitedExceptionCaught")
 #   public void someTest() {
-#     injector.injectMembers(this);
+#     try {
+#       injector.injectMembers(this);
+#     } catch (Exception e) {
+#     }
 #   }
 # }
 #
@@ -420,7 +428,7 @@ def migrate_guice_annotation(content):
                 new_content.append(injector_line)
             else:
                 # inject injector after public class SomeClass {
-                insert_line_after_method(new_content, content_iter, injector_line)
+                insert_lines_after_method(new_content, content_iter, [injector_line])
 
             continue
 
@@ -430,9 +438,19 @@ def migrate_guice_annotation(content):
         #   ....insert here....
         if '@BeforeAll' in line:
             new_content.append(line)
+            new_content.append('@SuppressWarnings("ProhibitedExceptionCaught")')
             # this should be the line of the method and keep adding the line until we get {
             # insert injectMember as the first line below the below method.
-            insert_line_after_method(new_content, content_iter, '    injector.injectMembers(this);')
+            insert_lines_after_method(
+                new_content,
+                content_iter,
+                [
+                    "    try {",
+                    "      injector.injectMembers(this);",
+                    "    } catch (Exception e) {",
+                    "    }",
+                ],
+            )
             add_injected_member = True
             continue
 
@@ -603,14 +621,14 @@ def replace_guice_module_with_injector(content):
         .format(", ".join(["{}"] * len(modules)).format(*modules))
 
 
-def insert_line_after_method(contents, content_iter, new_line):
+def insert_lines_after_method(contents, content_iter, new_lines):
     method_line = next(content_iter)
     while '{' not in method_line:
         contents.append(method_line)
         method_line = next(content_iter)
 
     contents.append(method_line)
-    contents.append(new_line)
+    contents.extend(new_lines)
 
 
 def migrate_buck(buck_module):

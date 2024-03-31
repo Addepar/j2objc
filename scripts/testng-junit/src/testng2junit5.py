@@ -101,6 +101,7 @@ import org.junit.jupiter.params.provider.MethodSource;''', content_new)
     # this forces @Guice annotation error, but it's needed for Guice.createInjector
     content_new = re.sub('import org.testng.annotations.Guice;',
                          '''import com.google.inject.Guice;
+import org.junit.jupiter.api.BeforeAll;
 import com.google.inject.Injector;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;''', content_new)
@@ -131,7 +132,7 @@ import org.junit.jupiter.api.TestInstance.Lifecycle;''', content_new)
 
     # make sure beforeAll include TestInstance
     if 'BeforeAll' in content_new and 'TestInstance' not in content_new:
-        content_new = re.sub('org.junit.jupiter.api.BeforeAll',
+        content_new = re.sub('org.junit.jupiter.api.BeforeAll;',
                              '''org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;''', content_new)
@@ -419,7 +420,9 @@ def migrate_guice_annotation(content):
             continue
 
         # handle insertion of injector
-        if 'public class' in line or 'public final class' in line:
+        if ('public class' in line
+                or 'public final class' in line
+                or 'public abstract class' in line):
             left_spaces = ' ' * (len(line) - len(line.lstrip()))
             new_content.append(left_spaces + '@TestInstance(Lifecycle.PER_CLASS)')
             new_content.append(line)
@@ -481,7 +484,7 @@ def migrate_test_instance(content):
     # add TestInstance to class level
     content_new = content
     if '@BeforeAll' in content:
-        content_new = re.sub(r'public final class', '@TestInstance(Lifecycle.PER_CLASS)\npublic final class', content)
+        content_new = re.sub(r'(public final class|public abstract class|public class)', '@TestInstance(Lifecycle.PER_CLASS)\n\\1', content_new)
 
     return content_new
 

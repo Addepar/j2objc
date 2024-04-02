@@ -55,11 +55,11 @@ throw_with_callable_template_no_message = '''    assertThrows(
 
 
 before_inject_template = '''  @BeforeAll
-  @SuppressWarnings("ProhibitedExceptionCaught")
+  @SuppressWarnings("EmptyCatchBlock")
   public void setup() {
     try {
       injector.injectMembers(this);
-    } catch (Exception e) {
+    } catch (RuntimeException e) {
     }
   }
 '''
@@ -389,11 +389,11 @@ def migrate_asserts(content):
 #   private final Injector injector = Guice.createInjector(new SomeModule());
 #
 #   @BeforeAll
-#   @SuppressWarnings("ProhibitedExceptionCaught")
+#   @SuppressWarnings("EmptyCatchBlock")
 #   public void someTest() {
 #     try {
 #       injector.injectMembers(this);
-#     } catch (Exception e) {
+#     } catch (RuntimeException e) {
 #     }
 #   }
 # }
@@ -441,7 +441,7 @@ def migrate_guice_annotation(content):
         #   ....insert here....
         if '@BeforeAll' in line:
             new_content.append(line)
-            new_content.append('@SuppressWarnings("ProhibitedExceptionCaught")')
+            new_content.append('@SuppressWarnings("EmptyCatchBlock")')
             # this should be the line of the method and keep adding the line until we get {
             # insert injectMember as the first line below the below method.
             insert_lines_after_method(
@@ -450,7 +450,7 @@ def migrate_guice_annotation(content):
                 [
                     "    try {",
                     "      injector.injectMembers(this);",
-                    "    } catch (Exception e) {",
+                    "    } catch (RuntimeException e) {",
                     "    }",
                 ],
             )

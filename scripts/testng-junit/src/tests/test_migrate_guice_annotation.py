@@ -23,11 +23,11 @@ expected_1 = """
       private final Injector injector = Guice.createInjector(new SomeModule());
 
       @BeforeAll
-      @SuppressWarnings("ProhibitedExceptionCaught")
+      @SuppressWarnings("EmptyCatchBlock")
       public void someTest() {
         try {
           injector.injectMembers(this);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
         }
       }
     }
@@ -54,11 +54,11 @@ expected_2 = """
       private final Injector injector = Guice.createInjector();
 
       @BeforeAll
-      @SuppressWarnings("ProhibitedExceptionCaught")
+      @SuppressWarnings("EmptyCatchBlock")
       public void someTest() {
         try {
           injector.injectMembers(this);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
         }
       }
     }
@@ -86,11 +86,11 @@ expected_3 = """
       private final Injector injector = Guice.createInjector(new TestModuleA(), new Test.ModuleB());
 
       @BeforeAll
-      @SuppressWarnings("ProhibitedExceptionCaught")
+      @SuppressWarnings("EmptyCatchBlock")
       public void someTest() {
         try {
           injector.injectMembers(this);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
         }
       }
     }

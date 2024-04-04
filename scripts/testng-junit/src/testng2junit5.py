@@ -441,7 +441,7 @@ def migrate_guice_annotation(content):
         #   ....insert here....
         if '@BeforeAll' in line:
             new_content.append(line)
-            new_content.append('@SuppressWarnings("EmptyCatchBlock")')
+            new_content.append('  @SuppressWarnings("EmptyCatchBlock")')
             # this should be the line of the method and keep adding the line until we get {
             # insert injectMember as the first line below the below method.
             insert_lines_after_method(

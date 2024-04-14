@@ -96,7 +96,7 @@ import org.junit.jupiter.params.provider.MethodSource;''', content_new)
                          'org.junit.jupiter.api.Assertions', content_new)
 
     content_new = re.sub('org.testng.Assert.(assert|expect)Throws',
-                         'com.addepar.infra.library.lang.assertion.Assert.assertThrows', content_new)
+                         'org.junit.jupiter.api.Assertions.assertThrows', content_new)
 
     # this forces @Guice annotation error, but it's needed for Guice.createInjector
     content_new = re.sub('import org.testng.annotations.Guice;',

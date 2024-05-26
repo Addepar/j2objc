@@ -119,12 +119,6 @@ import org.junit.jupiter.api.TestInstance.Lifecycle;''', content_new)
     if '@Guice' in content_new and '@BeforeAll' not in content_new:
         imports.append('import org.junit.jupiter.api.BeforeAll;')
 
-    # Listeners will be migrated to be junit @ExtendWith
-    if '@Listeners' in content_new:
-        content_new = re.sub('import org.testng.annotations.Listeners;\n', '', content_new)
-        imports.append('import com.addepar.infra.library.testing.requestscope.TestRequestScopeListener;')
-        imports.append('import org.junit.jupiter.api.extension.ExtendWith;')
-
     content_new = re.sub('org.junit.jupiter.api.Test;', '\n'.join(imports), content_new)
 
     # replace other random imports
@@ -148,6 +142,7 @@ def migrate_testng_annotations(content):
     # Most of our methods are more member friendly.
     content_new = re.sub(r'@BeforeMethod\s+(public|protected|private)', r'@BeforeEach\n  public', content_new)
     content_new = re.sub(r'@BeforeEach(\(alwaysRun\s+=\s+true\))?', '@BeforeEach', content_new)
+    content_new = re.sub(r'@BeforeMethod', '@BeforeEach', content_new)
 
     content_new = re.sub(r'@AfterMethod\s+(public|protected|private)', r'@AfterEach\n  public', content_new)
 
@@ -300,13 +295,16 @@ def migrate_exceptions(content):
                 new_content.append(line)
                 method_signature += line
 
+            print('method signature:', method_signature)
             if '{' in line:
                 # parse out method lines
                 line = next(content_iter)
+                print('method body:', line)
                 while not line.startswith('  }'):
                     # 4 spaces.
                     method_body.append('    '+line)
                     line = next(content_iter)
+                    print('method body:', line)
 
             expected_exceptions = matches.group(2).strip()
             if matches.group(4):
@@ -360,6 +358,9 @@ def migrate_asserts(content):
 
     content_new = re.sub(r'assertEquals\((\".*\"),\s*\n*\s*(.*),\s*(.*)\)',
                          'assertEquals(\\2, \\3, \\1)', content_new)
+
+    content_new = re.sub(r'assertTrue\((\".*\"),\s*\n*\s*(.*)\)',
+                         'assertTrue(\\2, \\1)', content_new)
 
     content_new = re.sub(r'assertNotSame\((\".*\"),\s*\n*\s*(.*),\s*(.*)\)',
                          'assertNotSame(\\2, \\3, \\1)', content_new)
@@ -508,7 +509,12 @@ def migrate_listeners(content):
     if '@Listeners(' not in content:
         return content
 
-    content_new = re.sub('@Listeners', '@ExtendWith', content)
+    # Listeners will be migrated to be junit @ExtendWith
+    content_new = re.sub('import org.testng.annotations.Listeners;',
+                         '''import com.addepar.infra.library.testing.requestscope.TestRequestScopeListener;
+import org.junit.jupiter.api.extension.ExtendWith;''', content)
+
+    content_new = re.sub('@Listeners', '@ExtendWith', content_new)
     content_new = re.sub('TestRequestScopes.Listener', 'TestRequestScopeListener', content_new)
     return content_new
 

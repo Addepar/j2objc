@@ -295,16 +295,13 @@ def migrate_exceptions(content):
                 new_content.append(line)
                 method_signature += line
 
-            print('method signature:', method_signature)
             if '{' in line:
                 # parse out method lines
                 line = next(content_iter)
-                print('method body:', line)
                 while not line.startswith('  }'):
                     # 4 spaces.
                     method_body.append('    '+line)
                     line = next(content_iter)
-                    print('method body:', line)
 
             expected_exceptions = matches.group(2).strip()
             if matches.group(4):

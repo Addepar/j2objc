@@ -18,17 +18,14 @@ content_1 = """
 expected_1 = """
 
     @TestInstance(Lifecycle.PER_CLASS)
+    @ExtendWith(GuiceInjectionExtension.class)
     public class SomeTest {
 
       private final Injector injector = Guice.createInjector(new SomeModule());
 
       @BeforeAll
-      @SuppressWarnings("EmptyCatchBlock")
       public void someTest() {
-        try {
-          injector.injectMembers(this);
-        } catch (RuntimeException e) {
-        }
+        injector.injectMembers(this);
       }
     }
 """
@@ -49,17 +46,14 @@ content_2 = """
 expected_2 = """
 
     @TestInstance(Lifecycle.PER_CLASS)
+    @ExtendWith(GuiceInjectionExtension.class)
     public class SomeTest {
 
       private final Injector injector = Guice.createInjector();
 
       @BeforeAll
-      @SuppressWarnings("EmptyCatchBlock")
       public void someTest() {
-        try {
-          injector.injectMembers(this);
-        } catch (RuntimeException e) {
-        }
+        injector.injectMembers(this);
       }
     }
 """
@@ -81,17 +75,14 @@ content_3 = """
 expected_3 = """
 
     @TestInstance(Lifecycle.PER_CLASS)
+    @ExtendWith(GuiceInjectionExtension.class)
     public class SomeTest {
 
       private final Injector injector = Guice.createInjector(new TestModuleA(), new Test.ModuleB());
 
       @BeforeAll
-      @SuppressWarnings("EmptyCatchBlock")
       public void someTest() {
-        try {
-          injector.injectMembers(this);
-        } catch (RuntimeException e) {
-        }
+        injector.injectMembers(this);
       }
     }
 """

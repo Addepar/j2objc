@@ -114,8 +114,6 @@ import org.junit.jupiter.api.TestInstance.Lifecycle;''', content_new)
     # refer to migrate_guice_annotation
     if '@Guice' in content_new and '@BeforeAll' not in content_new:
         imports.append('import org.junit.jupiter.api.BeforeAll;')
-        imports.append('import org.junit.jupiter.api.extension.ExtendWith;')
-        imports.append('import com.addepar.infra.library.testing.extention.GuiceInjectionExtension;')
 
     content_new = re.sub('org.junit.jupiter.api.Test;', '\n'.join(imports), content_new)
 
@@ -417,7 +415,6 @@ def migrate_guice_annotation(content):
                 or 'public abstract class' in line):
             left_spaces = ' ' * (len(line) - len(line.lstrip()))
             new_content.append(left_spaces + '@TestInstance(Lifecycle.PER_CLASS)')
-            new_content.append(left_spaces + '@ExtendWith(GuiceInjectionExtension.class)')
             new_content.append(line)
 
             if '{' in line:

@@ -18,7 +18,6 @@ content_1 = """
 expected_1 = """
 
     @TestInstance(Lifecycle.PER_CLASS)
-    @ExtendWith(GuiceInjectionExtension.class)
     public class SomeTest {
 
       private final Injector injector = Guice.createInjector(new SomeModule());
@@ -46,7 +45,6 @@ content_2 = """
 expected_2 = """
 
     @TestInstance(Lifecycle.PER_CLASS)
-    @ExtendWith(GuiceInjectionExtension.class)
     public class SomeTest {
 
       private final Injector injector = Guice.createInjector();
@@ -75,7 +73,6 @@ content_3 = """
 expected_3 = """
 
     @TestInstance(Lifecycle.PER_CLASS)
-    @ExtendWith(GuiceInjectionExtension.class)
     public class SomeTest {
 
       private final Injector injector = Guice.createInjector(new TestModuleA(), new Test.ModuleB());

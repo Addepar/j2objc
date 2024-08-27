@@ -41,6 +41,10 @@ content = """
   public void parsesUrlPrefixFromValidAdiaHost(URI adiaHost) {
     assertThat(AdiaReverseProxyServletModule.getUrlPrefix(adiaHost), is("/proxy-adia1"));
   }
+
+  @Test(dataProvider = "notFound", enabled = false)
+  public void testNotFoundProvider(String name) {
+  }
 """
 
 expected = """
@@ -82,6 +86,12 @@ expected = """
   @MethodSource("providesAdiaHosts")
   public void parsesUrlPrefixFromValidAdiaHost(URI adiaHost) {
     assertThat(AdiaReverseProxyServletModule.getUrlPrefix(adiaHost), is("/proxy-adia1"));
+  }
+
+  @Disabled
+  @ParameterizedTest
+  @MethodSource("notFound")
+  public void testNotFoundProvider(String name) {
   }
 """
 

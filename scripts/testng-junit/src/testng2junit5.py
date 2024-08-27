@@ -64,6 +64,7 @@ before_inject_template = '''  @BeforeAll
 def migrate_imports(content):
     # Updates import statements from TestNG to JUnit.
     content_new = re.sub('org.testng.annotations.Test', 'org.junit.jupiter.api.Test', content)
+    content_new = re.sub('org.junit.Test', 'org.junit.jupiter.api.Test', content_new)
 
     # Before
     content_new = re.sub('org.testng.annotations.BeforeSuite',
@@ -76,6 +77,7 @@ def migrate_imports(content):
                          'org.junit.jupiter.api.BeforeAll', content_new)
 
     content_new = re.sub('org.testng.annotations.BeforeTest', 'org.junit.jupiter.api.BeforeAll', content_new)
+    content_new = re.sub('org.junit.Before', 'org.junit.jupiter.api.BeforeEach', content_new)
 
     # After
     content_new = re.sub('org.testng.annotations.AfterMethod', 'org.junit.jupiter.api.AfterEach', content_new)
@@ -106,6 +108,7 @@ import org.junit.jupiter.api.TestInstance.Lifecycle;''', content_new)
     imports = ['org.junit.jupiter.api.Test;']
     if re.compile(r'@Test\s?\(enabled').search(content_new):
         imports.append('import org.junit.jupiter.api.Disabled;')
+    content_new = re.sub('import org.junit.Ignore;', 'import org.junit.jupiter.api.Disabled;', content_new)
 
     if 'expectedExceptionsMessageRegExp' in content_new or 'expectedExceptions' in content_new:
         imports.append('import static org.junit.jupiter.api.Assertions.assertThrows;')
@@ -139,6 +142,7 @@ def migrate_testng_annotations(content):
     content_new = re.sub(r'@BeforeMethod\s+(public|protected|private)', r'@BeforeEach\n  public', content_new)
     content_new = re.sub(r'@BeforeEach(\(alwaysRun\s+=\s+true\))?', '@BeforeEach', content_new)
     content_new = re.sub(r'@BeforeMethod', '@BeforeEach', content_new)
+    content_new = re.sub(r'@Before\n', r'@BeforeEach\n', content_new)
 
     content_new = re.sub(r'@AfterMethod\s+(public|protected|private)', r'@AfterEach\n  public', content_new)
 
@@ -167,6 +171,7 @@ def migrate_testng_annotations(content):
     content_new = re.sub('BaseJerseyTestNG', 'BaseJerseyJUnit', content_new)
 
     content_new = re.sub(r'@Test\s?\(enabled(\s*)=(\s*)false\)', '@Disabled @Test', content_new)
+    content_new = re.sub(r'@Ignore\n', r'@Disabled\n', content_new)
 
     # Ensure test methods are public
     content_new = re.sub('@Test\n  void', '@Test\n  public void', content_new)
@@ -196,8 +201,13 @@ import org.mockito.quality.Strictness;
 
 def migrate_data_providers(content):
     """TestNG allows a DataProvider to be renamed."""
-    if '@DataProvider' not in content:
+    if 'dataProvider' not in content:
         return content
+
+    if 'import org.junit.jupiter.params.ParameterizedTest' not in content:
+        content = re.sub('org.junit.jupiter.api.Test;', '''org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;''', content)
 
     '''
     Make a list of tuples mapping the new name to original name.
@@ -222,7 +232,14 @@ def migrate_data_providers(content):
     content_new = re.sub(r'@Test\(dataProvider\s*=\s*(.*?)\s*(?:,\s*(.*))?\)',
                          '@ParameterizedTest(\\2)\n  @MethodSource(\\1)', content_new)
 
-    # Convert @ParameterizedTest() to @ParameterizedTest
+    # Convert @ParameterizedTest(*) to @ParameterizedTest
+    matches = re.findall(r'@ParameterizedTest\((\s*enabled\s*=\s*(true|false)\s*)?\)', content_new)
+    if any(match[1] == 'false' for match in matches):
+        if 'import org.junit.jupiter.api.Disabled;' not in content_new:
+            content_new = re.sub('import org.junit.jupiter.api.Test;',
+                            '''import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Disabled;''', content_new)
+        content_new = re.sub(r'@ParameterizedTest\(\s*enabled\s*=\s*false\s*\)', '@Disabled\n  @ParameterizedTest', content_new)
     content_new = re.sub(r'@ParameterizedTest\(\)', '@ParameterizedTest', content_new)
 
     # Use provider function name in @MethodSource
@@ -624,27 +641,29 @@ def insert_lines_after_method(contents, content_iter, new_lines):
 
 
 def migrate_buck(buck_module):
-    buck_file = buck_module + "/BUCK"
-    if os.path.isfile(buck_file):
-        with open(buck_file, 'r') as f_in:
-            content = f_in.read()
-            if 'java_test_internal' in content and 'test_type = "junit"' not in content:
-                content = re.sub(r'java_test_internal\(',
-                                 'java_test_internal(\n    test_type = "junit",', content)
+    for path, _, files in os.walk(buck_module):
+        for file in files:
+            if file.endswith('BUCK'):
+                file_path = os.path.join(path, file)
+                with open(file_path, 'r') as f_in:
+                    content = f_in.read()
+                    if 'java_test_internal' in content and 'test_type = "junit"' not in content:
+                        content = re.sub(r'java_test_internal\(',
+                                        'java_test_internal(\n    test_type = "junit",', content)
 
-            if 'TEST_DEPS' in content and '//infra/library/lang:test_utils' not in content:
-                content = re.sub(r'TEST_DEPS = \[',
-                                 'TEST_DEPS = [\n    "//infra/library/lang:test_utils",', content)
+                    if 'TEST_DEPS' in content and '//infra/library/lang:test_utils' not in content:
+                        content = re.sub(r'TEST_DEPS = \[',
+                                        'TEST_DEPS = [\n    "//infra/library/lang:test_utils",', content)
 
-            with open(buck_file, 'w') as fn_out:
-                fn_out.write(content)
+                    with open(file_path, 'w') as fn_out:
+                        fn_out.write(content)
 
 
 def migrate_tests(test_dir):
     test_files = []
-    for path, directory, files in os.walk(test_dir):
+    for path, _, files in os.walk(test_dir):
         for file in files:
-            if file.endswith('.java') \
+            if 'src/test' in path and file.endswith('.java') \
                     and not file.endswith('AbstractJerseyTestNG.java') \
                     and not file.endswith('Assert.java') \
                     and not file.endswith('AssertionUtils.java') \
@@ -681,12 +700,8 @@ def main():
         sys.exit(1)
 
     buck_module = sys.argv[1]
-    test_dir = buck_module
-    if 'src/test' not in buck_module:
-        test_dir = buck_module + '/src/test'
-        migrate_buck(buck_module)
-
-    migrate_tests(test_dir)
+    migrate_buck(buck_module)
+    migrate_tests(buck_module)
 
 
 if __name__ == '__main__':

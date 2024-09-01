@@ -309,10 +309,10 @@ def migrate_exceptions(content):
                 method_signature += line
 
             if '{' in line:
+                leading_space_count = len(line) - len(line.lstrip())
                 # parse out method lines
                 line = next(content_iter)
-                while not line.startswith('  }'):
-                    # 4 spaces.
+                while not line.startswith(' ' * leading_space_count + '}'):
                     method_body.append('    '+line)
                     line = next(content_iter)
 

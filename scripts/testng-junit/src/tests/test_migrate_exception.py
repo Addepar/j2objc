@@ -50,6 +50,11 @@ content = """
     new RateTierImpl(-1, -5.0, 0.0, 1.0);
   }
 
+  @Test(expectedExceptions = IllegalArgumentException.class)
+  void testDuplicateSignalNameThrowsException() {
+    final Config config = createConfig(120,
+      List.of(Pair.of("test", 1), Pair.of("test", 1)));
+  }
 """
 
 expected = """
@@ -126,6 +131,17 @@ expected = """
       IllegalArgumentException.class,
       () -> {
         new RateTierImpl(-1, -5.0, 0.0, 1.0);
+      }
+    );
+  }
+
+  @Test
+  void testDuplicateSignalNameThrowsException() {
+    assertThrows(
+      IllegalArgumentException.class,
+      () -> {
+        final Config config = createConfig(120,
+          List.of(Pair.of("test", 1), Pair.of("test", 1)));
       }
     );
   }
